@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 public class LoanGroup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long groupId;
+    private Integer groupId;
 
     @Column
     private String groupName;
@@ -33,5 +33,9 @@ public class LoanGroup {
 
     public void addMember() {
         memberCount++;
+    }
+
+    public static Double calculateInterest(LoanGroup loanGroup) {
+        return (loanGroup.getMaxInterestRate()+loanGroup.getMinInterestRate())/2;
     }
 }

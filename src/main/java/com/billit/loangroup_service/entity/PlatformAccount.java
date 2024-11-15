@@ -1,11 +1,13 @@
 package com.billit.loangroup_service.entity;
 
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+@Getter
 @NoArgsConstructor
 @Entity
 @Table(name = "platform_account")
@@ -14,10 +16,11 @@ public class PlatformAccount {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private Long platformAccountId;
+    private Integer platformAccountId;
 
-    @Column(nullable = false)
-    private Integer groupId;
+    @OneToOne
+    @JoinColumn(name = "group_id", nullable = false)
+    private LoanGroup group;
 
     @Column(nullable = false, length = 50)
     private BigDecimal requiredAmount;
@@ -31,8 +34,8 @@ public class PlatformAccount {
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public PlatformAccount(Integer groupId, BigDecimal requiredAmount, BigDecimal currentBalance) {
-        this.groupId = groupId;
+    public PlatformAccount(LoanGroup groupId, BigDecimal requiredAmount, BigDecimal currentBalance) {
+        this.group = groupId;
         this.requiredAmount = requiredAmount;
         this.currentBalance = currentBalance;
         this.isClosed = false;

@@ -1,7 +1,6 @@
 package com.billit.loangroup_service.cache;
 
 import com.billit.loangroup_service.entity.PlatformAccount;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
