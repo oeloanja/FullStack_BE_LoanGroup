@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface LoanGroupRepository extends JpaRepository<LoanGroup, Long> {
-    List<LoanGroup> findByRiskLevelAndIsFulledTrue(RiskLevel riskLevel);
-    LoanGroup findByRiskLevelAndIsFulledFalse(RiskLevel riskLevel);
+    List<LoanGroup> findAllByRiskLevelAndIsFulledFalseOrderByMemberCountDesc(RiskLevel riskLevel);
+    List<LoanGroup> findAllByRiskLevelAndIsFulledTrue(RiskLevel riskLevel);
+    long countByRiskLevelAndIsFulledFalse(RiskLevel riskLevel);
 }
