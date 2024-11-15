@@ -10,14 +10,14 @@ import static com.billit.loangroup_service.entity.LoanGroup.calculateInterest;
 public class LoanGroupResponseDto {
     private final Integer groupId;
     private final String groupName;
-    private final Double InterestRate;
+    private final Double interestRate;
     private final RiskLevel riskLevel;
     private final Boolean isFulled;
 
     public LoanGroupResponseDto(LoanGroup loanGroup) {
         this.groupId = loanGroup.getGroupId();
         this.groupName = loanGroup.getGroupName();
-        this.InterestRate = calculateInterest(loanGroup);
+        this.interestRate = calculateInterest(loanGroup);
         this.riskLevel = loanGroup.getRiskLevel();
         this.isFulled = loanGroup.getIsFulled();
     }
