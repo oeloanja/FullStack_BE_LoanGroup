@@ -1,6 +1,7 @@
 package com.billit.loangroup_service.connection.dto;
 
 import com.billit.loangroup_service.enums.RiskLevel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -8,6 +9,7 @@ import java.math.BigDecimal;
 
 @Getter
 @NoArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class LoanResponseClientDto {
     private Long groupId;
     private RiskLevel riskLevel;

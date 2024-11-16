@@ -10,17 +10,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
-    @Value("${application.loan-url}")
-    private String loanServiceUrl;
-
-    @Bean
-    public RestClient restClient(RestTemplate restTemplate) {
-        return RestClient.builder()
-                .baseUrl(loanServiceUrl)
-                .build();
-    }
-
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
