@@ -4,20 +4,18 @@ import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
 import lombok.Getter;
 
-import static com.billit.loangroup_service.entity.LoanGroup.calculateInterest;
-
 @Getter
 public class LoanGroupResponseDto {
     private final Integer groupId;
     private final String groupName;
-    private final Double interestRate;
+    private final Double intRate;
     private final RiskLevel riskLevel;
     private final Boolean isFulled;
 
     public LoanGroupResponseDto(LoanGroup loanGroup) {
         this.groupId = loanGroup.getGroupId();
         this.groupName = loanGroup.getGroupName();
-        this.interestRate = calculateInterest(loanGroup);
+        this.intRate = loanGroup.getIntRateAvg();
         this.riskLevel = loanGroup.getRiskLevel();
         this.isFulled = loanGroup.getIsFulled();
     }

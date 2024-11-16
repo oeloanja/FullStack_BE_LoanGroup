@@ -12,12 +12,24 @@ spring:
         dialect: org.hibernate.dialect.MySQL8Dialect
     show-sql: true
 
+  redis:
+    host: localhost
+    port: 6379
+
   application:
-    name: loan-group
-  data:
-    redis:
-      host: localhost
-      port: 6379
+    name: loan-grou
+
+logging:
+  level:
+    com:
+      billit: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+
+
 
 server:
   port: 8084
+
+application:
+  loan-url: http://localhost:8083
