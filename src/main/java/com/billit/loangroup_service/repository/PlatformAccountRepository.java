@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface PlatformAccountRepository extends JpaRepository<PlatformAccount, Integer> {
     Optional<PlatformAccount> findByGroup(LoanGroup group);
     List<PlatformAccount> findByIsClosedFalse();
+
 }

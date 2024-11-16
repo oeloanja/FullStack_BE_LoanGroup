@@ -8,11 +8,12 @@ import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.PlatformAccount;
 import com.billit.loangroup_service.enums.RiskLevel;
+import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.PlatformAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-
-import static com.billit.loangroup_service.entity.LoanGroup.isAllActiveGroupsNearlyFull;
 import static com.billit.loangroup_service.entity.PlatformAccount.handleAccountClosure;
 
 @Slf4j
@@ -35,6 +34,8 @@ public class LoanGroupService {
     private final PlatformAccountCache platformAccountCache;
     private final PlatformAccountRepository platformAccountRepository;
     private final LoanServiceClient loanServiceClient;
+    private final ApplicationEventPublisher eventPublisher;
+
 
     // 멤버 추가
     @Transactional
@@ -50,7 +51,7 @@ public class LoanGroupService {
 
         if (activeGroups.isEmpty() || (activeGroups.size() < 3 && LoanGroup.isAllActiveGroupsNearlyFull(activeGroups))) {
             targetGroup = new LoanGroup("GR" + UUID.randomUUID(), riskLevel, LocalDateTime.now());
-            loanGroupRepository.save(targetGroup);
+            loanGroupRepository.saveAndFlush(targetGroup);  // 영속화 시점 바로 처리
         } else {
             targetGroup = activeGroups.get(0);
         }
@@ -58,46 +59,12 @@ public class LoanGroupService {
         targetGroup.incrementMemberCount();
         if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
             targetGroup.updateGroupAsFull();
-            createPlatformAccount(targetGroup);
+            loanGroupRepository.saveAndFlush(targetGroup);  // 상태 변경 후 바로 영속화
+            eventPublisher.publishEvent(new LoanGroupFullEvent(targetGroup.getGroupId()));  // 이벤트 발행
         }
 
         return LoanGroupResponseDto.from(targetGroup);
     }
-
-    // 현재 입금액 수정
-    @Transactional
-    public void updatePlatformAccountBalance(Integer platformAccountId, BigDecimal amount) {
-        platformAccountCache.updateBalanceInCache(platformAccountId, amount);
-
-        PlatformAccount account = platformAccountRepository.findById(platformAccountId)
-                .orElseThrow(() -> new RuntimeException("Platform account not found"));
-        account.updateBalance(amount);
-
-        if (account.getIsClosed()) {
-            handleAccountClosure(account);
-        }
-    }
-
-    public void createPlatformAccount(LoanGroup group) {
-        // Loan 서비스에서 해당 그룹의 대출 목록 조회
-        List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-
-        // 총 대출금액 계산
-        BigDecimal totalLoanAmount = groupLoans.stream()
-                .map(LoanResponseClientDto::getLoanAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);  // add 메서드 명확히 지정
-
-        PlatformAccount account = new PlatformAccount(
-                group,
-                totalLoanAmount,
-                BigDecimal.ZERO,
-                LocalDateTime.now()
-        );
-        platformAccountRepository.save(account);
-        platformAccountCache.saveToCache(account);
-    }
-
-
 
     // 투자 가능한 그룹 목록 조회
     public List<LoanGroupResponseDto> getActiveGroupsWithPlatformAccount(RiskLevel riskLevel) {

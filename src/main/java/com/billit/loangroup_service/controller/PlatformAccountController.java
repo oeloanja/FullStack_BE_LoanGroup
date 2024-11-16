@@ -22,10 +22,10 @@ public class PlatformAccountController {
     private final PlatformAccountService platformAccountService;
 
     @PutMapping("/{platformAccountId}/invest")
-    public ResponseEntity<Void> processInvestment(
+    public ResponseEntity<Void> updatePlatformAccountBalance(
             @PathVariable Integer platformAccountId,
             @RequestBody BigDecimal amount) {
-        platformAccountService.processInvestment(platformAccountId, amount);
+        platformAccountService.updatePlatformAccountBalance(platformAccountId, amount);
         return ResponseEntity.ok().build();
     }
 }
