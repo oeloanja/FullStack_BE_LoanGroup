@@ -2,6 +2,7 @@ package com.billit.loangroup_service.config;
 
 import com.billit.loangroup_service.entity.PlatformAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -26,19 +27,18 @@ public class RedisConfig{
     public RedisConnectionFactory redisConnectionFactory() {
         return new LettuceConnectionFactory(redisHost, redisPort);
     }
-    @Bean
-    public ObjectMapper objectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.registerModule(new JavaTimeModule());
-        return mapper;
-    }
 
     @Bean
     public RedisTemplate<String, PlatformAccount> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, PlatformAccount> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer()); // JSON 직렬화 사용
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer(objectMapper));
         return template;
     }
 }
