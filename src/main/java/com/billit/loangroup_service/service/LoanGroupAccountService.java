@@ -19,8 +19,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.billit.loangroup_service.entity.LoanGroupAccount.handleAccountClosure;
-
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -67,8 +65,8 @@ public class LoanGroupAccountService {
         target.updateBalance(amount);
         loanGroupAccountCache.updateBalanceInCache(target.getPlatformAccountId(), amount);
 
-        if (target.getIsClosed()) {
-            handleAccountClosure(target);
+        if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0 ){
+            target.closeAccount();
         }
     }
 

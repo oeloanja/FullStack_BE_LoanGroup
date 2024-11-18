@@ -62,6 +62,10 @@ public class LoanGroupAccount implements Serializable {
         }
     }
 
+    public void closeAccount(){
+        this.isClosed = true;
+    }
+
     public static void handleAccountClosure(LoanGroupAccount account) {
         log.info("Platform account {} is closed. Required amount: {}, Current balance: {}",
                 account.getPlatformAccountId(),

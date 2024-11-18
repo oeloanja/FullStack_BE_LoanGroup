@@ -44,6 +44,7 @@ public class LoanGroupAccountCache {
         redisTemplate.execute(new SessionCallback<>() {
             @Override
             public Object execute(RedisOperations operations) throws DataAccessException {
+                boolean isMultiStarted = false;
                 try {
                     operations.watch(key);
 
@@ -53,12 +54,16 @@ public class LoanGroupAccountCache {
                     }
 
                     operations.multi();
+                    isMultiStarted = true;
+
                     account.updateBalance(amount);
                     saveToCache(account);
 
                     return operations.exec();
                 } catch (Exception e) {
-                    operations.discard();
+                    if (isMultiStarted) {
+                        operations.discard();
+                    }
                     throw e;
                 }
             }
