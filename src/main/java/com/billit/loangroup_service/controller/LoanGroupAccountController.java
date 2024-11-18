@@ -2,18 +2,17 @@ package com.billit.loangroup_service.controller;
 
 
 import com.billit.loangroup_service.connection.dto.InvestmentRequestDto;
-import com.billit.loangroup_service.dto.LoanGroupResponseDto;
+import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 
 @RequiredArgsConstructor
 @Controller
-@RequestMapping("/api/v1/platform")
+@RequestMapping("/api/v1/loans/group/account")
 public class LoanGroupAccountController {
     private final LoanGroupAccountService loanGroupAccountService;
 
@@ -24,4 +23,12 @@ public class LoanGroupAccountController {
         loanGroupAccountService.updateLoanGroupAccountBalance(request.getGroupId(), request.getAmount());
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("{groupId}")
+    public LoanGroupAccountResponseDto getPlatformAccount(
+            @PathVariable Integer groupId
+    ){
+        return loanGroupAccountService.getAccount(groupId);
+    }
+
 }

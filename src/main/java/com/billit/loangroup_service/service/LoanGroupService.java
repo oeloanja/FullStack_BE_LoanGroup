@@ -69,15 +69,13 @@ public class LoanGroupService {
     }
 
 //    // 투자 가능한 그룹 목록 조회 -> 로직 수정 필요
-//    public List<LoanGroupResponseDto> getActiveGroupsWithLoanGroupAccount(RiskLevel riskLevel) {
-//        return loanGroupRepository.findAllByRiskLevelAndIsFulledTrue(riskLevel).stream()
-//                .filter(group -> {
-//                    Optional<LoanGroupAccount> account = Optional.ofNullable(loanGroupAccountRepository.findByGroup_GroupId(group.getGroupId()));
-//                    return account.isPresent() && !account.get().getIsClosed();
-//                })
-//                .map(LoanGroupResponseDto::from)
-//                .collect(Collectors.toList());
-//    }
+
+    public List<LoanGroupResponseDto> getActiveGroups(RiskLevel riskLevel) {
+        return loanGroupRepository.findByRiskLevelAndLoanGroupAccount_IsClosedFalse(riskLevel)
+                .stream()
+                .map(LoanGroupResponseDto::from)
+                .collect(Collectors.toList());
+    }
 
     // 특정 그룹 정보 조회
     public LoanGroupResponseDto getGroupDetails(Integer groupId) {

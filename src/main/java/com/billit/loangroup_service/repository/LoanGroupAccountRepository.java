@@ -9,5 +9,4 @@ import java.util.Optional;
 
 public interface LoanGroupAccountRepository extends JpaRepository<LoanGroupAccount, Integer> {
     LoanGroupAccount findByGroup_GroupId(Integer groupId);
-    List<LoanGroupAccount> findByIsClosedFalse();
 }

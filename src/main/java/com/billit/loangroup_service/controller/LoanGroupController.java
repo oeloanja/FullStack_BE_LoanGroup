@@ -23,8 +23,9 @@ public class LoanGroupController {
         return loanGroupService.assignGroup(request);
     }
 
-//    @GetMapping("/list/{riskLevel}")
-//    public List<LoanGroupResponseDto> getGroupList(@PathVariable RiskLevel riskLevel) {
-//        return loanGroupService.getActiveGroupsWithLoanGroupAccount(riskLevel);
-//    }
+    @GetMapping("/list/{riskLevel}")
+    public List<LoanGroupResponseDto> getGrouplist(@PathVariable int riskLevel) {
+        RiskLevel lev = RiskLevel.fromOrdinal(riskLevel);
+        return loanGroupService.getActiveGroups(lev);
+    }
 }

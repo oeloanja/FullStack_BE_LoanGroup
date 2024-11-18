@@ -3,6 +3,7 @@ package com.billit.loangroup_service.service;
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
@@ -68,6 +69,12 @@ public class LoanGroupAccountService {
         if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0 ){
             target.closeAccount();
         }
+    }
+
+    // GroupId로 Account 찾기
+    public LoanGroupAccountResponseDto getAccount(Integer groupId) {
+        LoanGroupAccount account = loanGroupAccountRepository.findByGroup_GroupId(groupId);
+        return LoanGroupAccountResponseDto.from(account);
     }
 
     // 이자율 평균 계산
