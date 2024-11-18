@@ -4,11 +4,13 @@ import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 public class LoanGroupResponseDto {
     private final Integer groupId;
     private final String groupName;
-    private final Double intRate;
+    private final BigDecimal intRate;
     private final RiskLevel riskLevel;
     private final Boolean isFulled;
 
