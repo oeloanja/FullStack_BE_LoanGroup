@@ -1,11 +1,15 @@
 package com.billit.loangroup_service.entity;
 
+import com.billit.loangroup_service.connection.client.LoanServiceClient;
+import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.enums.RiskLevel;
 import jakarta.persistence.*;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -26,7 +30,7 @@ public class LoanGroup {
     @Enumerated(EnumType.ORDINAL)
     private RiskLevel riskLevel;
 
-    private double intRateAvg;
+    private BigDecimal intRateAvg;
 
     private Boolean isFulled = false;
     private LocalDateTime createdAt;
@@ -46,7 +50,7 @@ public class LoanGroup {
         this.createdAt = createdAt;
         this.isFulled = false;
         this.memberCount = 0;
-        this.intRateAvg = 0.0;
+        this.intRateAvg = BigDecimal.valueOf(0.0);
     }
 
     public boolean isNearlyFull() {
@@ -61,14 +65,11 @@ public class LoanGroup {
         this.memberCount++;
     }
 
-    public void calculateIntRateAvg(double averageRate) {
-        this.intRateAvg = averageRate;
+    public void updateIntRateAvg(BigDecimal avg) {
+        this.intRateAvg = avg;
     }
-
     public static boolean isAllActiveGroupsNearlyFull(List<LoanGroup> activeGroups) {
         return activeGroups.stream()
                 .allMatch(LoanGroup::isNearlyFull);
     }
-
-
 }

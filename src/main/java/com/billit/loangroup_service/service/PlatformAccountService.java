@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,8 +30,6 @@ public class PlatformAccountService {
     private final LoanGroupRepository loanGroupRepository;
     private final RedisTemplate<String, PlatformAccount> redisTemplate;
 
-    private static final String CACHE_KEY_PREFIX = "platform_account:";
-
     // 계좌 생성
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createPlatformAccount(LoanGroup group) {
@@ -44,6 +43,11 @@ public class PlatformAccountService {
         BigDecimal totalLoanAmount = groupLoans.stream()
                 .map(LoanResponseClientDto::getLoanAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);  // add 메서드 명확히 지정
+
+        BigDecimal averageIntRate = calculateIntRateAvg(groupLoans);
+        managedGroup.updateIntRateAvg(averageIntRate);
+        loanGroupRepository.save(managedGroup);  // 업데이트된 평균 이자율 저장
+
 
         PlatformAccount account = new PlatformAccount(
                 managedGroup,
@@ -67,5 +71,13 @@ public class PlatformAccountService {
         if (account.getIsClosed()) {
             handleAccountClosure(account);
         }
+    }
+
+    // 이자율 평균 계산
+    public static BigDecimal calculateIntRateAvg(List<LoanResponseClientDto> groupLoans){
+        return groupLoans.stream()
+                .map(LoanResponseClientDto::getIntRate)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .divide(BigDecimal.valueOf(groupLoans.size()), 2, RoundingMode.HALF_UP);
     }
 }

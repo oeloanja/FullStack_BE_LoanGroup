@@ -18,12 +18,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import static com.billit.loangroup_service.entity.PlatformAccount.handleAccountClosure;
 
 @Slf4j
 @Service
@@ -35,7 +35,6 @@ public class LoanGroupService {
     private final PlatformAccountRepository platformAccountRepository;
     private final LoanServiceClient loanServiceClient;
     private final ApplicationEventPublisher eventPublisher;
-
 
     // 멤버 추가
     @Transactional
@@ -51,7 +50,7 @@ public class LoanGroupService {
 
         if (activeGroups.isEmpty() || (activeGroups.size() < 3 && LoanGroup.isAllActiveGroupsNearlyFull(activeGroups))) {
             targetGroup = new LoanGroup("GR" + UUID.randomUUID(), riskLevel, LocalDateTime.now());
-            loanGroupRepository.saveAndFlush(targetGroup);  // 영속화 시점 바로 처리
+            loanGroupRepository.saveAndFlush(targetGroup);
         } else {
             targetGroup = activeGroups.get(0);
         }
@@ -59,14 +58,14 @@ public class LoanGroupService {
         targetGroup.incrementMemberCount();
         if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
             targetGroup.updateGroupAsFull();
-            loanGroupRepository.saveAndFlush(targetGroup);  // 상태 변경 후 바로 영속화
-            eventPublisher.publishEvent(new LoanGroupFullEvent(targetGroup.getGroupId()));  // 이벤트 발행
+            loanGroupRepository.saveAndFlush(targetGroup);
+            eventPublisher.publishEvent(new LoanGroupFullEvent(targetGroup.getGroupId()));
         }
 
         return LoanGroupResponseDto.from(targetGroup);
     }
 
-    // 투자 가능한 그룹 목록 조회
+    // 투자 가능한 그룹 목록 조회 -> 로직 수정 필요
     public List<LoanGroupResponseDto> getActiveGroupsWithPlatformAccount(RiskLevel riskLevel) {
         return loanGroupRepository.findAllByRiskLevelAndIsFulledTrue(riskLevel).stream()
                 .filter(group -> {
