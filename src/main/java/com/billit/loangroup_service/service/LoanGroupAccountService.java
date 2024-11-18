@@ -1,10 +1,10 @@
 package com.billit.loangroup_service.service;
 
-import com.billit.loangroup_service.cache.PlatformAccountCache;
+import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.entity.LoanGroup;
-import com.billit.loangroup_service.entity.PlatformAccount;
+import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.PlatformAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,17 +18,17 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import static com.billit.loangroup_service.entity.PlatformAccount.handleAccountClosure;
+import static com.billit.loangroup_service.entity.LoanGroupAccount.handleAccountClosure;
 
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class PlatformAccountService {
+public class LoanGroupAccountService {
     private final PlatformAccountRepository platformAccountRepository;
-    private final PlatformAccountCache platformAccountCache;
+    private final LoanGroupAccountCache loanGroupAccountCache;
     private final LoanServiceClient loanServiceClient;
     private final LoanGroupRepository loanGroupRepository;
-    private final RedisTemplate<String, PlatformAccount> redisTemplate;
+    private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
 
     // 계좌 생성
     @Transactional(propagation = Propagation.REQUIRES_NEW)
@@ -49,22 +49,22 @@ public class PlatformAccountService {
         loanGroupRepository.save(managedGroup);  // 업데이트된 평균 이자율 저장
 
 
-        PlatformAccount account = new PlatformAccount(
+        LoanGroupAccount account = new LoanGroupAccount(
                 managedGroup,
                 totalLoanAmount,
                 BigDecimal.ZERO,
                 LocalDateTime.now()
         );
         platformAccountRepository.save(account);
-        platformAccountCache.saveToCache(account);
+        loanGroupAccountCache.saveToCache(account);
     }
 
     // 현재 입금액 수정
     @Transactional
     public void updatePlatformAccountBalance(Integer platformAccountId, BigDecimal amount) {
-        platformAccountCache.updateBalanceInCache(platformAccountId, amount);
+        loanGroupAccountCache.updateBalanceInCache(platformAccountId, amount);
 
-        PlatformAccount account = platformAccountRepository.findById(platformAccountId)
+        LoanGroupAccount account = platformAccountRepository.findById(platformAccountId)
                 .orElseThrow(() -> new RuntimeException("Platform account not found"));
         account.updateBalance(amount);
 

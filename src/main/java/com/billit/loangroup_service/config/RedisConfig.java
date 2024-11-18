@@ -1,6 +1,6 @@
 package com.billit.loangroup_service.config;
 
-import com.billit.loangroup_service.entity.PlatformAccount;
+import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import org.springframework.beans.factory.annotation.Value;
@@ -29,8 +29,8 @@ public class RedisConfig{
     }
 
     @Bean
-    public RedisTemplate<String, PlatformAccount> redisTemplate(RedisConnectionFactory connectionFactory) {
-        RedisTemplate<String, PlatformAccount> template = new RedisTemplate<>();
+    public RedisTemplate<String, LoanGroupAccount> redisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, LoanGroupAccount> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
         ObjectMapper objectMapper = new ObjectMapper();

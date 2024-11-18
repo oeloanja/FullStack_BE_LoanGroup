@@ -1,6 +1,6 @@
 package com.billit.loangroup_service.cache;
 
-import com.billit.loangroup_service.entity.PlatformAccount;
+import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.repository.PlatformAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
@@ -14,21 +14,21 @@ import java.time.Duration;
 
 @Component
 @RequiredArgsConstructor
-public class PlatformAccountCache {
+public class LoanGroupAccountCache {
     private static final String ACCOUNT_KEY_PREFIX = "platform_account:";
     private static final long CACHE_DURATION = 24 * 60 * 60;
 
-    private final RedisTemplate<String, PlatformAccount> redisTemplate;
+    private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
     private final PlatformAccountRepository platformAccountRepository;
 
-    public void saveToCache(PlatformAccount account) {
+    public void saveToCache(LoanGroupAccount account) {
         String key = generateKey(account.getPlatformAccountId());
         redisTemplate.opsForValue().set(key, account, Duration.ofSeconds(CACHE_DURATION));
     }
 
-    public PlatformAccount getFromCache(Integer accountId) {
+    public LoanGroupAccount getFromCache(Integer accountId) {
         String key = generateKey(accountId);
-        PlatformAccount account = redisTemplate.opsForValue().get(key);
+        LoanGroupAccount account = redisTemplate.opsForValue().get(key);
 
         if (account == null) {
             account = platformAccountRepository.findById(accountId)
@@ -47,7 +47,7 @@ public class PlatformAccountCache {
                 try {
                     operations.watch(key);
 
-                    PlatformAccount account = getFromCache(accountId);
+                    LoanGroupAccount account = getFromCache(accountId);
                     if (account.getIsClosed()) {
                         throw new IllegalStateException("Account is already closed");
                     }

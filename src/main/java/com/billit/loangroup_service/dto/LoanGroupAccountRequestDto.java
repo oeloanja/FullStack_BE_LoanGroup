@@ -5,6 +5,6 @@ import lombok.Getter;
 import java.math.BigDecimal;
 
 @Getter
-public class PlatformAccountRequestDto {
+public class LoanGroupAccountRequestDto {
     private BigDecimal investmentAmount;
 }
