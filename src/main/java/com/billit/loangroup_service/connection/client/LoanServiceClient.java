@@ -14,6 +14,7 @@ public interface LoanServiceClient {
     @GetMapping("/api/v1/loans/detail/{loanId}")
     LoanResponseClientDto getLoanById(@PathVariable Integer loanId);
 
+    // LoanService에서 loanId를 보내면 loanGroup을 update함
     @PutMapping("/api/v1/loans/{loanId}/assign-group")
     void updateLoanGroup(@PathVariable Integer loanId, @RequestParam Integer groupId);
 

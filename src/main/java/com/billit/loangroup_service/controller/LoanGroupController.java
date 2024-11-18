@@ -23,13 +23,8 @@ public class LoanGroupController {
         return loanGroupService.assignGroup(request);
     }
 
-    @GetMapping("/list/{riskLevel}")
-    public List<LoanGroupResponseDto> getGroupList(@PathVariable RiskLevel riskLevel) {
-        return loanGroupService.getActiveGroupsWithPlatformAccount(riskLevel);
-    }
-
-    @GetMapping("/detail/{groupId}")
-    public LoanGroupResponseDto getGroupDetail(@PathVariable Integer groupId) {
-        return loanGroupService.getGroupDetails(groupId);
-    }
+//    @GetMapping("/list/{riskLevel}")
+//    public List<LoanGroupResponseDto> getGroupList(@PathVariable RiskLevel riskLevel) {
+//        return loanGroupService.getActiveGroupsWithLoanGroupAccount(riskLevel);
+//    }
 }
