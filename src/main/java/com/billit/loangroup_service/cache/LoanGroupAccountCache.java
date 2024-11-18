@@ -22,7 +22,7 @@ public class LoanGroupAccountCache {
     private final LoanGroupAccountRepository loanGroupAccountRepository;
 
     public void saveToCache(LoanGroupAccount account) {
-        String key = generateKey(account.getPlatformAccountId());
+        String key = generateKey(account.getLoanGroupAccountId());
         redisTemplate.opsForValue().set(key, account, Duration.ofSeconds(CACHE_DURATION));
     }
 

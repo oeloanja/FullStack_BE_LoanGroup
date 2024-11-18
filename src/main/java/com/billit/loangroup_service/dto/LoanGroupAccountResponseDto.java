@@ -10,15 +10,13 @@ import java.time.LocalDateTime;
 @Getter
 public class LoanGroupAccountResponseDto {
     private final Integer platformAccountId;
-    private final LoanGroup group;
     private final BigDecimal requiredAmount;
     private final BigDecimal currentBalance;
     private final Boolean isClosed;
     private final LocalDateTime createdAt;
 
     public LoanGroupAccountResponseDto(LoanGroupAccount loanGroupAccount) {
-        this.platformAccountId = loanGroupAccount.getPlatformAccountId();
-        this.group = loanGroupAccount.getGroup();
+        this.platformAccountId = loanGroupAccount.getLoanGroupAccountId();
         this.requiredAmount = loanGroupAccount.getRequiredAmount();
         this.currentBalance = loanGroupAccount.getCurrentBalance();
         this.isClosed = loanGroupAccount.getIsClosed();

@@ -4,6 +4,7 @@ import com.billit.loangroup_service.connection.dto.LoanRequestClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.service.LoanGroupService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,5 +28,11 @@ public class LoanGroupController {
     public List<LoanGroupResponseDto> getGrouplist(@PathVariable int riskLevel) {
         RiskLevel lev = RiskLevel.fromOrdinal(riskLevel);
         return loanGroupService.getActiveGroups(lev);
+    }
+
+
+    @GetMapping("/detail/{groupId}")
+    public LoanGroupResponseDto getGroupDetail(@PathVariable Integer groupId) {
+        return loanGroupService.getGroupDetails(groupId);
     }
 }

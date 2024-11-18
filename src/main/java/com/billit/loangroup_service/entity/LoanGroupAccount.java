@@ -17,14 +17,14 @@ import java.time.LocalDateTime;
 @Entity
 @JsonSerialize
 @JsonDeserialize
-@Table(name = "platform_account")
+@Table(name = "loan_group_account")
 public class LoanGroupAccount implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
-    private Integer platformAccountId;
+    private Integer LoanGroupAccountId;
 
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinColumn(name = "group_id", nullable = false, unique = true)
@@ -68,7 +68,7 @@ public class LoanGroupAccount implements Serializable {
 
     public static void handleAccountClosure(LoanGroupAccount account) {
         log.info("Platform account {} is closed. Required amount: {}, Current balance: {}",
-                account.getPlatformAccountId(),
+                account.getLoanGroupAccountId(),
                 account.getRequiredAmount(),
                 account.getCurrentBalance());
 

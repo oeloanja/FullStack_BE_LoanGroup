@@ -4,7 +4,6 @@ import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
-import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
@@ -64,7 +63,7 @@ public class LoanGroupAccountService {
     public void updateLoanGroupAccountBalance(Integer loanGroupId, BigDecimal amount) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId);
         target.updateBalance(amount);
-        loanGroupAccountCache.updateBalanceInCache(target.getPlatformAccountId(), amount);
+        loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), amount);
 
         if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0 ){
             target.closeAccount();

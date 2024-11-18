@@ -68,8 +68,7 @@ public class LoanGroupService {
         return LoanGroupResponseDto.from(targetGroup);
     }
 
-//    // 투자 가능한 그룹 목록 조회 -> 로직 수정 필요
-
+//    // 투자 가능한 그룹 목록 조회
     public List<LoanGroupResponseDto> getActiveGroups(RiskLevel riskLevel) {
         return loanGroupRepository.findByRiskLevelAndLoanGroupAccount_IsClosedFalse(riskLevel)
                 .stream()
@@ -82,5 +81,4 @@ public class LoanGroupService {
         LoanGroup group = loanGroupRepository.findById(Long.valueOf(groupId)).orElse(null);
         return LoanGroupResponseDto.from(group);
     }
-
 }
