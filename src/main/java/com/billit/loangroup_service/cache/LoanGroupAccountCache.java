@@ -1,7 +1,7 @@
 package com.billit.loangroup_service.cache;
 
 import com.billit.loangroup_service.entity.LoanGroupAccount;
-import com.billit.loangroup_service.repository.PlatformAccountRepository;
+import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.RedisOperations;
@@ -19,7 +19,7 @@ public class LoanGroupAccountCache {
     private static final long CACHE_DURATION = 24 * 60 * 60;
 
     private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
-    private final PlatformAccountRepository platformAccountRepository;
+    private final LoanGroupAccountRepository loanGroupAccountRepository;
 
     public void saveToCache(LoanGroupAccount account) {
         String key = generateKey(account.getPlatformAccountId());
@@ -31,7 +31,7 @@ public class LoanGroupAccountCache {
         LoanGroupAccount account = redisTemplate.opsForValue().get(key);
 
         if (account == null) {
-            account = platformAccountRepository.findById(accountId)
+            account = loanGroupAccountRepository.findById(accountId)
                     .orElseThrow(() -> new RuntimeException("Platform account not found"));
             saveToCache(account);
         }

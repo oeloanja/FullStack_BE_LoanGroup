@@ -1,14 +1,13 @@
 package com.billit.loangroup_service.controller;
 
 
+import com.billit.loangroup_service.connection.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 
@@ -19,11 +18,10 @@ public class LoanGroupAccountController {
     private final LoanGroupAccountService loanGroupAccountService;
 
     // 투자금 현황 업데이트
-    @PutMapping("/{platformAccountId}/invest")
-    public ResponseEntity<Void> updatePlatformAccountBalance(
-            @PathVariable Integer platformAccountId,
-            @RequestBody BigDecimal amount) {
-        loanGroupAccountService.updatePlatformAccountBalance(platformAccountId, amount);
+    @PutMapping("/invest")
+    public ResponseEntity<String> updatePlatformAccountBalance(
+            @RequestBody InvestmentRequestDto request) {
+        loanGroupAccountService.updateLoanGroupAccountBalance(request.getGroupId(), request.getAmount());
         return ResponseEntity.ok().build();
     }
 }

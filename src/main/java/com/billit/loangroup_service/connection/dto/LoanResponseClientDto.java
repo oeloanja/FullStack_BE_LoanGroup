@@ -11,14 +11,14 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class LoanResponseClientDto {
-    private Long groupId;
+    private Integer groupId;
     private RiskLevel riskLevel;
     private Integer memberCount;
     private Boolean isFulled;
     private BigDecimal loanAmount;
     private BigDecimal intRate;
 
-    public LoanResponseClientDto(Long groupId, RiskLevel riskLevel, Integer memberCount, Boolean isFilled, BigDecimal loanAmount, BigDecimal intRate) {
+    public LoanResponseClientDto(Integer groupId, RiskLevel riskLevel, Integer memberCount, Boolean isFilled, BigDecimal loanAmount, BigDecimal intRate) {
         this.groupId = groupId;
         this.riskLevel = riskLevel;
         this.memberCount = memberCount;

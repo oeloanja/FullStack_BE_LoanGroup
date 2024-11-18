@@ -3,10 +3,11 @@ package com.billit.loangroup_service.service;
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
-import com.billit.loangroup_service.repository.PlatformAccountRepository;
+import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ import static com.billit.loangroup_service.entity.LoanGroupAccount.handleAccount
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class LoanGroupAccountService {
-    private final PlatformAccountRepository platformAccountRepository;
+    private final LoanGroupAccountRepository loanGroupAccountRepository;
     private final LoanGroupAccountCache loanGroupAccountCache;
     private final LoanServiceClient loanServiceClient;
     private final LoanGroupRepository loanGroupRepository;
@@ -55,26 +56,24 @@ public class LoanGroupAccountService {
                 BigDecimal.ZERO,
                 LocalDateTime.now()
         );
-        platformAccountRepository.save(account);
+        loanGroupAccountRepository.save(account);
         loanGroupAccountCache.saveToCache(account);
     }
 
-    // 현재 입금액 수정
+    // 현재 입금액 수정: LoanGroupAccount entity 데이터가 편집됨
     @Transactional
-    public void updatePlatformAccountBalance(Integer platformAccountId, BigDecimal amount) {
-        loanGroupAccountCache.updateBalanceInCache(platformAccountId, amount);
+    public void updateLoanGroupAccountBalance(Integer loanGroupId, BigDecimal amount) {
+        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId);
+        target.updateBalance(amount);
+        loanGroupAccountCache.updateBalanceInCache(target.getPlatformAccountId(), amount);
 
-        LoanGroupAccount account = platformAccountRepository.findById(platformAccountId)
-                .orElseThrow(() -> new RuntimeException("Platform account not found"));
-        account.updateBalance(amount);
-
-        if (account.getIsClosed()) {
-            handleAccountClosure(account);
+        if (target.getIsClosed()) {
+            handleAccountClosure(target);
         }
     }
 
     // 이자율 평균 계산
-    public static BigDecimal calculateIntRateAvg(List<LoanResponseClientDto> groupLoans){
+    public BigDecimal calculateIntRateAvg(List<LoanResponseClientDto> groupLoans){
         return groupLoans.stream()
                 .map(LoanResponseClientDto::getIntRate)
                 .reduce(BigDecimal.ZERO, BigDecimal::add)

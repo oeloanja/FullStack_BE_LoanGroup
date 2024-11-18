@@ -12,4 +12,5 @@ public interface LoanGroupRepository extends JpaRepository<LoanGroup, Long> {
     List<LoanGroup> findAllByRiskLevelAndIsFulledFalseOrderByMemberCountDesc(RiskLevel riskLevel);
     List<LoanGroup> findAllByRiskLevelAndIsFulledTrue(RiskLevel riskLevel);
     long countByRiskLevelAndIsFulledFalse(RiskLevel riskLevel);
+    LoanGroup findByGroupId(Integer groupId);
 }
