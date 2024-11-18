@@ -1,12 +1,12 @@
 package com.billit.loangroup_service.service;
 
-import com.billit.loangroup_service.cache.PlatformAccountCache;
+import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.dto.LoanRequestClientDto;
 import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
-import com.billit.loangroup_service.entity.PlatformAccount;
+import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -31,7 +30,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoanGroupService {
     private final LoanGroupRepository loanGroupRepository;
-    private final PlatformAccountCache platformAccountCache;
+    private final LoanGroupAccountCache loanGroupAccountCache;
     private final PlatformAccountRepository platformAccountRepository;
     private final LoanServiceClient loanServiceClient;
     private final ApplicationEventPublisher eventPublisher;
@@ -69,7 +68,7 @@ public class LoanGroupService {
     public List<LoanGroupResponseDto> getActiveGroupsWithPlatformAccount(RiskLevel riskLevel) {
         return loanGroupRepository.findAllByRiskLevelAndIsFulledTrue(riskLevel).stream()
                 .filter(group -> {
-                    Optional<PlatformAccount> account = platformAccountRepository.findByGroup(group);
+                    Optional<LoanGroupAccount> account = platformAccountRepository.findByGroup(group);
                     return account.isPresent() && !account.get().getIsClosed();
                 })
                 .map(LoanGroupResponseDto::from)

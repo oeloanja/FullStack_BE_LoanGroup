@@ -1,19 +1,13 @@
 package com.billit.loangroup_service.entity;
 
-import com.billit.loangroup_service.connection.client.LoanServiceClient;
-import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.enums.RiskLevel;
 import jakarta.persistence.*;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @NoArgsConstructor
 @Entity
@@ -36,7 +30,7 @@ public class LoanGroup {
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "group", cascade = CascadeType.ALL)
-    private PlatformAccount platformAccount;
+    private LoanGroupAccount loanGroupAccount;
 
 
     @Transient

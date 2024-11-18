@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @JsonSerialize
 @JsonDeserialize
 @Table(name = "platform_account")
-public class PlatformAccount implements Serializable {
+public class LoanGroupAccount implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
@@ -45,7 +45,7 @@ public class PlatformAccount implements Serializable {
     @Column(name = "last_updated_at")
     private LocalDateTime lastUpdatedAt;
 
-    public PlatformAccount(LoanGroup group, BigDecimal requiredAmount, BigDecimal currentBalance, LocalDateTime createdAt) {
+    public LoanGroupAccount(LoanGroup group, BigDecimal requiredAmount, BigDecimal currentBalance, LocalDateTime createdAt) {
         this.group = group;
         this.requiredAmount = requiredAmount;
         this.currentBalance = currentBalance;
@@ -62,7 +62,7 @@ public class PlatformAccount implements Serializable {
         }
     }
 
-    public static void handleAccountClosure(PlatformAccount account) {
+    public static void handleAccountClosure(LoanGroupAccount account) {
         log.info("Platform account {} is closed. Required amount: {}, Current balance: {}",
                 account.getPlatformAccountId(),
                 account.getRequiredAmount(),
