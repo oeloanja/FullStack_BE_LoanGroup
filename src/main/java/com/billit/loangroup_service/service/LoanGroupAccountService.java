@@ -2,6 +2,7 @@ package com.billit.loangroup_service.service;
 
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
+import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
@@ -114,6 +115,11 @@ public class LoanGroupAccountService {
 
                 // Investment 서비스에 investmentDate update 요청
 //                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+
+//                BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
+//                investmentServiceClient.requestUpdateInvestAmount(
+//                        new InvestmentRequestDto(group.getGroupId(), difference)
+//                );
 
                 // 3. 대출 상태 EXECUTING으로 업데이트
                 List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
