@@ -1,8 +1,11 @@
 package com.billit.loangroup_service.service;
 
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
-import com.billit.loangroup_service.connection.client.LoanServiceClient;
-import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
+import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
+import com.billit.loangroup_service.connection.user.client.UserServiceClient;
+import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
@@ -18,20 +21,22 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
-@Transactional(readOnly = true)
+@Transactional
 @RequiredArgsConstructor
 public class LoanGroupAccountService {
     private final LoanGroupAccountRepository loanGroupAccountRepository;
     private final LoanGroupAccountCache loanGroupAccountCache;
     private final LoanServiceClient loanServiceClient;
+    private final UserServiceClient userServiceClient;
     private final LoanGroupRepository loanGroupRepository;
     private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
 
     // 계좌 생성
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void createPlatformAccount(LoanGroup group) {
+    public void createLoanGroupAccount(LoanGroup group) {
         LoanGroup managedGroup = loanGroupRepository.findById(Long.valueOf(group.getGroupId()))
                 .orElseThrow(() -> new IllegalStateException("Group not found"));
 
@@ -65,10 +70,40 @@ public class LoanGroupAccountService {
         target.updateBalance(amount);
         loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), amount);
 
-        if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0 ){
+        if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
             target.closeAccount();
+            processDisbursement(target.getGroup());  // 대출금 입금 처리 추가
         }
     }
+
+    private void processDisbursement(LoanGroup group) {
+            // 1. 해당 그룹의 대출 목록 조회
+            List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
+
+//            // 2. User 서비스로 대출금 입금 요청 전송
+//            List<UserRequestDto> disbursementRequests = groupLoans.stream()
+//                    .map(loan -> new UserRequestDto(
+//                            loan.getAccountBorrowId(),
+//                            loan.getLoanAmount()
+//                    ))
+//                    .collect(Collectors.toList());
+//
+//            boolean isSuccess = userServiceClient.requestDisbursement(disbursementRequests);
+            if(true){
+            //if (isSuccess) {
+                // 3. 대출 상태 EXECUTING(1)으로 업데이트
+                List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
+                        .map(loan -> new LoanStatusUpdateRequestDto(
+                                loan.getLoanId(),
+                                1  // EXECUTING의 status 값
+                        ))
+                        .collect(Collectors.toList());
+
+                loanServiceClient.updateLoansStatus(statusUpdateRequests); // EXECUTING의 ordinal 값
+            } else {
+                // TODO: 실패 처리 로직 추가
+            }
+        }
 
     // GroupId로 Account 찾기
     public LoanGroupAccountResponseDto getAccount(Integer groupId) {

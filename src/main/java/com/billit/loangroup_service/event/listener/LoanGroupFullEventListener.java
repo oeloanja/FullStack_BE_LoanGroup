@@ -29,6 +29,6 @@ public class LoanGroupFullEventListener {
     public void createPlatformAccountWithNewTransaction(String groupId) {
         LoanGroup group = loanGroupRepository.findById(Long.valueOf(groupId))
                 .orElseThrow(() -> new IllegalStateException("Group not found"));
-        loanGroupAccountService.createPlatformAccount(group);
+        loanGroupAccountService.createLoanGroupAccount(group);
     }
 }
