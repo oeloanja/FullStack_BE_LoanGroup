@@ -9,6 +9,10 @@ import com.billit.loangroup_service.connection.user.client.UserServiceClient;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
+import com.billit.loangroup_service.exception.ClosedAccountException;
+import com.billit.loangroup_service.exception.DisbursementFailedException;
+import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
+import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,10 +43,14 @@ public class LoanGroupAccountService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLoanGroupAccount(LoanGroup group) {
         LoanGroup managedGroup = loanGroupRepository.findById(Long.valueOf(group.getGroupId()))
-                .orElseThrow(() -> new IllegalStateException("Group not found"));
+                .orElseThrow(() -> new LoanGroupNotFoundException(group.getGroupId()));
+
 
         // Loan 서비스에서 해당 그룹의 대출 목록 조회
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
+        if (groupLoans == null || groupLoans.isEmpty()) {
+            throw new LoanNotFoundException(group.getGroupId());
+        }
 
         // 총 대출금액 계산
         BigDecimal totalLoanAmount = groupLoans.stream()
@@ -68,18 +76,29 @@ public class LoanGroupAccountService {
     @Transactional
     public void updateLoanGroupAccountBalance(Integer loanGroupId, BigDecimal amount) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId);
+        if (target == null) {
+            throw new LoanGroupNotFoundException(loanGroupId);
+        }
+
+        if (target.getIsClosed()) {
+            throw new ClosedAccountException(target.getLoanGroupAccountId());
+        }
+
         target.updateBalance(amount);
         loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), amount);
 
-        if(target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
+        if (target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
             target.closeAccount();
-            processDisbursement(target.getGroup());  // 대출금 입금 처리 추가
+            processDisbursement(target.getGroup());
         }
     }
 
     private void processDisbursement(LoanGroup group) {
             // 1. 해당 그룹의 대출 목록 조회
             List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
+        if (groupLoans == null || groupLoans.isEmpty()) {
+            throw new LoanNotFoundException(group.getGroupId());
+        }
 
 //            // 2. User 서비스로 대출금 입금 요청 전송
 //            List<UserRequestDto> disbursementRequests = groupLoans.stream()
@@ -106,7 +125,7 @@ public class LoanGroupAccountService {
 
                 loanServiceClient.updateLoansStatus(statusUpdateRequests); // EXECUTING의 ordinal 값
             } else {
-                // TODO: 실패 처리 로직 추가
+                throw new DisbursementFailedException(group.getGroupId());
             }
         }
 

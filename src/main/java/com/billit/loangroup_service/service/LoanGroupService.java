@@ -9,6 +9,8 @@ import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
+import com.billit.loangroup_service.exception.GroupAlreadyFulledException;
+import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,7 +43,7 @@ public class LoanGroupService {
         // 대출 받아오기
         LoanResponseClientDto loanResponseClient = loanServiceClient.getLoanById(request.getLoanId());
         if (loanResponseClient == null) {
-            throw new IllegalStateException("Loan response not found for loanId: " + request.getLoanId());
+            throw new LoanNotFoundException(request.getLoanId());
         }
         BigDecimal intRate = loanResponseClient.getIntRate();
         RiskLevel riskLevel = RiskLevel.fromInterestRate(intRate);
@@ -53,6 +55,10 @@ public class LoanGroupService {
             loanGroupRepository.saveAndFlush(targetGroup);
         } else {
             targetGroup = activeGroups.get(0);
+        }
+
+        if (targetGroup.getIsFulled()) {
+            throw new GroupAlreadyFulledException(targetGroup.getGroupId());
         }
 
         targetGroup.incrementMemberCount();
