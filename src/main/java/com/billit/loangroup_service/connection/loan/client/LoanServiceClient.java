@@ -1,11 +1,9 @@
-package com.billit.loangroup_service.connection.client;
+package com.billit.loangroup_service.connection.loan.client;
 
-import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -23,4 +21,14 @@ public interface LoanServiceClient {
 
     @GetMapping("/api/loans/group/{groupId}/average-rate")
     Double getAverageInterestRateByGroupId(@PathVariable("groupId") Integer groupId);
+
+    @PutMapping("/api/v1/loans/status")
+    void updateLoanStatus(@RequestBody LoanStatusUpdateRequestDto request);
+
+    @GetMapping("/api/v1/loans/group/{groupId}")
+    List<LoanResponseClientDto> getLoansByGroupId(@PathVariable String groupId);
+
+    default void updateLoansStatus(List<LoanStatusUpdateRequestDto> requests) {
+        requests.forEach(this::updateLoanStatus);
+    }
 }

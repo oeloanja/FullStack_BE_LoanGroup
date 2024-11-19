@@ -11,4 +11,5 @@ import java.util.List;
 public interface LoanGroupRepository extends JpaRepository<LoanGroup, Long> {
     List<LoanGroup> findAllByRiskLevelAndIsFulledFalseOrderByMemberCountDesc(RiskLevel riskLevel);
     List<LoanGroup> findByRiskLevelAndLoanGroupAccount_IsClosedFalse(RiskLevel riskLevel);
+
 }
