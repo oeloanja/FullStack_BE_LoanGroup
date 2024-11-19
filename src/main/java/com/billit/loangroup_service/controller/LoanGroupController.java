@@ -1,9 +1,10 @@
 package com.billit.loangroup_service.controller;
 
-import com.billit.loangroup_service.connection.loan.dto.LoanRequestClientDto;
+import com.billit.loangroup_service.connection.dto.LoanRequestClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.service.LoanGroupService;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 

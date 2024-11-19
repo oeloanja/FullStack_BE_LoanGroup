@@ -1,4 +1,4 @@
-package com.billit.loangroup_service.connection.invest.dto;
+package com.billit.loangroup_service.connection.dto;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

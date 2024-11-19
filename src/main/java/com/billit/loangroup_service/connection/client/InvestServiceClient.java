@@ -1,7 +1,8 @@
-package com.billit.loangroup_service.connection.invest.client;
+package com.billit.loangroup_service.connection.client;
 
-import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.connection.dto.InvestmentRequestDto;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 

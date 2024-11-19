@@ -1,6 +1,6 @@
 package com.billit.loangroup_service.controller;
 
-import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.connection.dto.InvestmentRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +22,8 @@ public class LoanGroupAccountController {
         return ResponseEntity.ok().build();
     }
 
-    // group에 account가 있는지 조회
     @GetMapping("{groupId}")
-    public LoanGroupAccountResponseDto getLoanGroupAccount(
+    public LoanGroupAccountResponseDto getPlatformAccount(
             @PathVariable Integer groupId
     ){
         return loanGroupAccountService.getAccount(groupId);

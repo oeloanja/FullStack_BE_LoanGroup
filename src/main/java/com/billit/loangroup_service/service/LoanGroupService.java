@@ -1,12 +1,14 @@
 package com.billit.loangroup_service.service;
 
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
-import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
-import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
-import com.billit.loangroup_service.connection.loan.dto.LoanRequestClientDto;
-import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
+import com.billit.loangroup_service.connection.client.InvestServiceClient;
+import com.billit.loangroup_service.connection.client.LoanServiceClient;
+import com.billit.loangroup_service.connection.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.connection.dto.LoanRequestClientDto;
+import com.billit.loangroup_service.connection.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
+import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
@@ -20,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
