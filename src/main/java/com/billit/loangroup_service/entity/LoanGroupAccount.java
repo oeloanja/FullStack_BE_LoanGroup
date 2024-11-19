@@ -19,8 +19,6 @@ import java.time.LocalDateTime;
 @JsonDeserialize
 @Table(name = "loan_group_account")
 public class LoanGroupAccount implements Serializable {
-    private static final long serialVersionUID = 1L;
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column

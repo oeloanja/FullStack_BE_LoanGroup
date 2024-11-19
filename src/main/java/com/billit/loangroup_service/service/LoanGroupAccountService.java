@@ -1,11 +1,11 @@
 package com.billit.loangroup_service.service;
 
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
+import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
 import com.billit.loangroup_service.connection.user.client.UserServiceClient;
-import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
@@ -32,6 +32,7 @@ public class LoanGroupAccountService {
     private final LoanServiceClient loanServiceClient;
     private final UserServiceClient userServiceClient;
     private final LoanGroupRepository loanGroupRepository;
+    private final InvestServiceClient investmentServiceClient;
     private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
 
     // 계좌 생성
@@ -91,7 +92,11 @@ public class LoanGroupAccountService {
 //            boolean isSuccess = userServiceClient.requestDisbursement(disbursementRequests);
             if(true){
             //if (isSuccess) {
-                // 3. 대출 상태 EXECUTING(1)으로 업데이트
+
+                // Investment 서비스에 investmentDate update 요청
+//                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+
+                // 3. 대출 상태 EXECUTING으로 업데이트
                 List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
                         .map(loan -> new LoanStatusUpdateRequestDto(
                                 loan.getLoanId(),

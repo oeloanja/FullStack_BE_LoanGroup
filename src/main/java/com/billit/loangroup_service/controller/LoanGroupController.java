@@ -29,7 +29,6 @@ public class LoanGroupController {
         return loanGroupService.getActiveGroups(lev);
     }
 
-
     @GetMapping("/detail/{groupId}")
     public LoanGroupResponseDto getGroupDetail(@PathVariable Integer groupId) {
         return loanGroupService.getGroupDetails(groupId);
