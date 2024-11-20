@@ -49,14 +49,14 @@ public class LoanGroupAccountService {
 
         // Loan 서비스에서 해당 그룹의 대출 목록 조회
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        if (groupLoans == null || groupLoans.isEmpty()) {
+        if (groupLoans.isEmpty()) {
             throw new LoanNotFoundException(group.getGroupId());
         }
 
         // 총 대출금액 계산
         BigDecimal totalLoanAmount = groupLoans.stream()
                 .map(LoanResponseClientDto::getLoanAmount)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);  // add 메서드 명확히 지정
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal averageIntRate = calculateIntRateAvg(groupLoans);
         managedGroup.updateIntRateAvg(averageIntRate);
@@ -76,10 +76,8 @@ public class LoanGroupAccountService {
     // 현재 입금액 수정: LoanGroupAccount entity 데이터가 편집됨
     @Transactional
     public void updateLoanGroupAccountBalance(Integer loanGroupId, BigDecimal amount) {
-        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId);
-        if (target == null) {
-            throw new LoanGroupNotFoundException(loanGroupId);
-        }
+        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId)
+                .orElseThrow(() -> new LoanGroupNotFoundException(loanGroupId));
 
         if (target.getIsClosed()) {
             throw new ClosedAccountException(target.getLoanGroupAccountId());
@@ -137,8 +135,9 @@ public class LoanGroupAccountService {
 
     // GroupId로 Account 찾기
     public LoanGroupAccountResponseDto getAccount(Integer groupId) {
-        LoanGroupAccount account = loanGroupAccountRepository.findByGroup_GroupId(groupId);
-        return LoanGroupAccountResponseDto.from(account);
+        return loanGroupAccountRepository.findByGroup_GroupId(groupId)
+                .map(LoanGroupAccountResponseDto::from)
+                .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
     }
 
     // 이자율 평균 계산

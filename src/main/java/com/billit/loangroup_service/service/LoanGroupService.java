@@ -10,6 +10,7 @@ import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
 import com.billit.loangroup_service.exception.GroupAlreadyFulledException;
+import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
@@ -81,7 +82,8 @@ public class LoanGroupService {
 
     // 특정 그룹 정보 조회
     public LoanGroupResponseDto getGroupDetails(Integer groupId) {
-        LoanGroup group = loanGroupRepository.findById(Long.valueOf(groupId)).orElse(null);
-        return LoanGroupResponseDto.from(group);
+        return loanGroupRepository.findById(Long.valueOf(groupId))
+                .map(LoanGroupResponseDto::from)
+                .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
     }
 }
