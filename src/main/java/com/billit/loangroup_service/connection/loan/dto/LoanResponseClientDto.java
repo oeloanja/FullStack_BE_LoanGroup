@@ -13,17 +13,19 @@ import java.math.BigDecimal;
 public class LoanResponseClientDto {
     private Integer loanId;
     private Integer groupId;
-    private Integer accountBorrowId;
+    private Integer userBorrowId;
+    private Integer userBorrowAccountId;
     private BigDecimal loanAmount;
     private RiskLevel riskLevel;
     private Integer memberCount;
     private Boolean isFulled;
     private BigDecimal intRate;
 
-    public LoanResponseClientDto(Integer loanId, Integer groupId, Integer accountBorrowId, BigDecimal loanAmount, RiskLevel riskLevel, Integer memberCount, Boolean isFulled, BigDecimal intRate) {
+    public LoanResponseClientDto(Integer loanId, Integer groupId, Integer userBorrowId, Integer userBorrowAccountId, BigDecimal loanAmount, RiskLevel riskLevel, Integer memberCount, Boolean isFulled, BigDecimal intRate) {
         this.loanId = loanId;
         this.groupId = groupId;
-        this.accountBorrowId = accountBorrowId;
+        this.userBorrowId = userBorrowId;
+        this.userBorrowAccountId = userBorrowAccountId;
         this.loanAmount = loanAmount;
         this.riskLevel = riskLevel;
         this.memberCount = memberCount;

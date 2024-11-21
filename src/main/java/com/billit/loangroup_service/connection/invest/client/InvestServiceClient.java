@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(name = "invest-service", url = "http://localhost:8081")
 public interface InvestServiceClient {
     @PutMapping("/api/v1/investments/updateBalance")
-    void requestUpdateInvestAmount(@RequestBody InvestmentRequestDto request);
+    void refundUpdateInvestAmount(@RequestBody InvestmentRequestDto request);
 
     @PutMapping("/api/investments/group/{groupId}/investmentDate")
     void updateInvestmentDatesByGroupId(@PathVariable Integer groupId);

@@ -7,6 +7,8 @@ import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
 import com.billit.loangroup_service.connection.user.client.UserServiceClient;
+import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
+import com.billit.loangroup_service.connection.user.dto.UserResponseDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
@@ -16,7 +18,11 @@ import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -28,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -93,31 +100,47 @@ public class LoanGroupAccountService {
     }
 
     private void processDisbursement(LoanGroup group) {
+        log.info("Starting disbursement for group ID: {}", group.getGroupId());
             // 1. 해당 그룹의 대출 목록 조회
             List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        if (groupLoans == null || groupLoans.isEmpty()) {
-            throw new LoanNotFoundException(group.getGroupId());
+        log.info("Retrieved loans: {}", groupLoans);  // 대출 목록 확인
+        groupLoans.forEach(loan -> {
+            log.info("Loan ID: {}, AccountBorrowId: {}", loan.getLoanId(), loan.getUserBorrowAccountId());
+        });
+
+            // 2. User 서비스로 대출금 입금 요청 전송
+        log.info("Creating disbursement requests...");
+        List<UserRequestDto> disbursementRequests = groupLoans.stream()
+                .map(loan -> {
+                    log.info("Processing loan: {}", loan);
+                    return new UserRequestDto(
+                            loan.getUserBorrowAccountId(),
+                            loan.getUserBorrowId(),
+                            loan.getLoanAmount(),
+                            "대출금 입금"
+                    );
+                })
+                .collect(Collectors.toList());
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String requestBody = objectMapper.writeValueAsString(disbursementRequests);
+            log.info("Disbursement Request Body: {}", requestBody);
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing disbursement requests", e);
         }
 
-//            // 2. User 서비스로 대출금 입금 요청 전송
-//            List<UserRequestDto> disbursementRequests = groupLoans.stream()
-//                    .map(loan -> new UserRequestDto(
-//                            loan.getAccountBorrowId(),
-//                            loan.getLoanAmount()
-//                    ))
-//                    .collect(Collectors.toList());
-//
-//            boolean isSuccess = userServiceClient.requestDisbursement(disbursementRequests);
-            if(true){
-            //if (isSuccess) {
+        log.info("Disbursement requests created: {}", disbursementRequests);
+            try{
+                List<UserResponseDto> response = userServiceClient.requestDisbursement(disbursementRequests);
+                log.info("Disbursement response: {}", response);
 
-                // Investment 서비스에 investmentDate update 요청
-//                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
-
-//                BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
-//                investmentServiceClient.requestUpdateInvestAmount(
-//                        new InvestmentRequestDto(group.getGroupId(), difference)
-//                );
+                BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
+//                if(difference.compareTo(BigDecimal.ZERO) > 0){
+//                    investmentServiceClient.refundUpdateInvestAmount(
+//                            new InvestmentRequestDto(group.getGroupId(), difference)
+//                    );
+//                }
 
                 // 3. 대출 상태 EXECUTING으로 업데이트
                 List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
@@ -128,7 +151,10 @@ public class LoanGroupAccountService {
                         .collect(Collectors.toList());
 
                 loanServiceClient.updateLoansStatus(statusUpdateRequests); // EXECUTING의 ordinal 값
-            } else {
+//                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+            }
+            catch (FeignException e){
+                log.error("Feign exception during disbursement: ", e);
                 throw new DisbursementFailedException(group.getGroupId());
             }
         }
