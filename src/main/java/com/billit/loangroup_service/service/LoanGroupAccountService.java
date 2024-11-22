@@ -99,7 +99,7 @@ public class LoanGroupAccountService {
 
         if (target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
             target.closeAccount();
-//            investmentServiceClient.updateSettlementRatioByGroupId(new SettlementRatioRequestDto(loanGroupId));
+            investmentServiceClient.updateSettlementRatioByGroupId(new SettlementRatioRequestDto(loanGroupId));
             processDisbursement(target.getGroup());
         }
     }
@@ -124,21 +124,21 @@ public class LoanGroupAccountService {
                 List<UserResponseDto> response = userServiceClient.requestDisbursement(disbursementRequests);
 
                 BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
-//                if(difference.compareTo(BigDecimal.ZERO) > 0){
-//                    investmentServiceClient.refundUpdateInvestAmount(
-//                            new InvestmentRequestDto(group.getGroupId(), difference)
-//                    );
-//                }
-//                groupLoans.stream()
-//                        .map(request -> new RepaymentRequestDto(
-//                                request.getLoanId(),
-//                                request.getGroupId(),
-//                                request.getLoanAmount(),
-//                                request.getTerm(),
-//                                request.getIntRate(),
-//                                request.getIssueDate()
-//                        ))
-//                        .forEach(repaymentClient::createRepayment);
+                if(difference.compareTo(BigDecimal.ZERO) > 0){
+                    investmentServiceClient.refundUpdateInvestAmount(
+                            new InvestmentRequestDto(group.getGroupId(), difference)
+                    );
+                }
+                groupLoans.stream()
+                        .map(request -> new RepaymentRequestDto(
+                                request.getLoanId(),
+                                request.getGroupId(),
+                                request.getLoanAmount(),
+                                request.getTerm(),
+                                request.getIntRate(),
+                                request.getIssueDate()
+                        ))
+                        .forEach(repaymentClient::createRepayment);
 
                 // 3. 대출 상태 EXECUTING으로 업데이트
                 List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
@@ -149,7 +149,7 @@ public class LoanGroupAccountService {
                         .collect(Collectors.toList());
 
                 loanServiceClient.updateLoansStatus(statusUpdateRequests); // EXECUTING의 ordinal 값
-//                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
             }
             catch (FeignException e){
                 log.error("Feign exception during disbursement: ", e);

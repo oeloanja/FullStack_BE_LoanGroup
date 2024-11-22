@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "user-service", configuration = FeignConfig.class)
+@FeignClient(name = "user-service", url="localhost:8085", configuration = FeignConfig.class)
 public interface UserServiceClient {
     @PostMapping("/api/v1/user_service/accounts/transaction/group/borrow/deposit")
     List<UserResponseDto> requestDisbursement(@RequestBody List<UserRequestDto> requests);
