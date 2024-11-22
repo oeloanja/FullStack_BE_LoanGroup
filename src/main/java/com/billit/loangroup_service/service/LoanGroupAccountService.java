@@ -3,9 +3,12 @@ package com.billit.loangroup_service.service;
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
 import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.connection.invest.dto.SettlementRatioRequestDto;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
+import com.billit.loangroup_service.connection.repayment.client.RepaymentClient;
+import com.billit.loangroup_service.connection.repayment.dto.RepaymentRequestDto;
 import com.billit.loangroup_service.connection.user.client.UserServiceClient;
 import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
 import com.billit.loangroup_service.connection.user.dto.UserResponseDto;
@@ -45,6 +48,7 @@ public class LoanGroupAccountService {
     private final UserServiceClient userServiceClient;
     private final LoanGroupRepository loanGroupRepository;
     private final InvestServiceClient investmentServiceClient;
+    private final RepaymentClient repaymentClient;
     private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
 
     // 계좌 생성
@@ -95,45 +99,29 @@ public class LoanGroupAccountService {
 
         if (target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
             target.closeAccount();
+//            investmentServiceClient.updateSettlementRatioByGroupId(new SettlementRatioRequestDto(loanGroupId));
             processDisbursement(target.getGroup());
         }
     }
 
     private void processDisbursement(LoanGroup group) {
-        log.info("Starting disbursement for group ID: {}", group.getGroupId());
-            // 1. 해당 그룹의 대출 목록 조회
-            List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        log.info("Retrieved loans: {}", groupLoans);  // 대출 목록 확인
-        groupLoans.forEach(loan -> {
-            log.info("Loan ID: {}, AccountBorrowId: {}", loan.getLoanId(), loan.getUserBorrowAccountId());
-        });
+        List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
 
-            // 2. User 서비스로 대출금 입금 요청 전송
-        log.info("Creating disbursement requests...");
         List<UserRequestDto> disbursementRequests = groupLoans.stream()
                 .map(loan -> {
-                    log.info("Processing loan: {}", loan);
-                    return new UserRequestDto(
+                    UserRequestDto request = new UserRequestDto(
                             loan.getUserBorrowAccountId(),
                             loan.getUserBorrowId(),
                             loan.getLoanAmount(),
                             "대출금 입금"
                     );
+                    log.info("Created disbursement request: {}", request);
+                    return request;
                 })
                 .collect(Collectors.toList());
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            String requestBody = objectMapper.writeValueAsString(disbursementRequests);
-            log.info("Disbursement Request Body: {}", requestBody);
-        } catch (JsonProcessingException e) {
-            log.error("Error serializing disbursement requests", e);
-        }
-
-        log.info("Disbursement requests created: {}", disbursementRequests);
             try{
                 List<UserResponseDto> response = userServiceClient.requestDisbursement(disbursementRequests);
-                log.info("Disbursement response: {}", response);
 
                 BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
 //                if(difference.compareTo(BigDecimal.ZERO) > 0){
@@ -141,6 +129,16 @@ public class LoanGroupAccountService {
 //                            new InvestmentRequestDto(group.getGroupId(), difference)
 //                    );
 //                }
+//                groupLoans.stream()
+//                        .map(request -> new RepaymentRequestDto(
+//                                request.getLoanId(),
+//                                request.getGroupId(),
+//                                request.getLoanAmount(),
+//                                request.getTerm(),
+//                                request.getIntRate(),
+//                                request.getIssueDate()
+//                        ))
+//                        .forEach(repaymentClient::createRepayment);
 
                 // 3. 대출 상태 EXECUTING으로 업데이트
                 List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
