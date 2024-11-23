@@ -32,9 +32,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class LoanGroupService {
     private final LoanGroupRepository loanGroupRepository;
-    private final LoanGroupAccountCache loanGroupAccountCache;
-    private final LoanGroupAccountRepository loanGroupAccountRepository;
-    private final InvestServiceClient investServiceClient;
     private final LoanServiceClient loanServiceClient;
     private final ApplicationEventPublisher eventPublisher;
 

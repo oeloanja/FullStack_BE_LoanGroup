@@ -1,15 +1,16 @@
 package com.billit.loangroup_service.connection.user.client;
 
+import com.billit.loangroup_service.config.FeignConfig;
 import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
+import com.billit.loangroup_service.connection.user.dto.UserResponseDto;
+import feign.Headers;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "user-service")
+@FeignClient(name = "user-service", configuration = FeignConfig.class)
 public interface UserServiceClient {
-    @PostMapping("/api/v1/users/disbursement")
-    boolean requestDisbursement(@RequestBody List<UserRequestDto> requests);
+    @PostMapping("/api/v1/user_service/accounts/transaction/group/borrow/deposit")
+    List<UserResponseDto> requestDisbursement(@RequestBody List<UserRequestDto> requests);
 }
