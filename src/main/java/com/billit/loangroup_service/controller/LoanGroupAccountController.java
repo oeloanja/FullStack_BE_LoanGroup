@@ -1,6 +1,6 @@
 package com.billit.loangroup_service.controller;
 
-import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.exception.LoanGroupException;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
@@ -14,17 +14,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 @RestController
 @Slf4j
-@RequestMapping("/api/v1/loan_group/account")
+@RequestMapping("/api/v1/loan-group-service/account")
 public class LoanGroupAccountController {
     private final LoanGroupAccountService loanGroupAccountService;
 
     // 투자금 현황 업데이트
     @PutMapping("/invest")
     public ResponseEntity<String> updatePlatformAccountBalance(
-            @Valid @RequestBody InvestmentRequestDto request) {
+            @Valid @RequestBody LoanGroupAccountRequestDto request) {
         try {
             log.info("Received request: {}", request);  // 요청 로그 추가
-            loanGroupAccountService.updateLoanGroupAccountBalance(request.getGroupId(), request.getAmount());
+            loanGroupAccountService.updateLoanGroupAccountBalance(request);
             return ResponseEntity.ok("투자금이 성공적으로 입금되었습니다.");
         } catch (LoanGroupException e) {
             log.error("Failed to process investment: {}", e.getMessage());  // 에러 로그 추가

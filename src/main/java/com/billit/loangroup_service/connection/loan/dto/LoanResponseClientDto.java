@@ -18,7 +18,7 @@ public class LoanResponseClientDto {
     private Integer groupId;
     private Integer userBorrowId;
     private Integer term;
-    private Integer userBorrowAccountId;
+    private Integer accountBorrowId;
     private BigDecimal loanAmount;
     private LocalDate issueDate;
     private BigDecimal intRate;

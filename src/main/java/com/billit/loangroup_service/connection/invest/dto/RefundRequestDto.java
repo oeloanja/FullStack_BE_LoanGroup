@@ -1,4 +1,4 @@
-package com.billit.loangroup_service.dto;
+package com.billit.loangroup_service.connection.invest.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
-public class LoanGroupAccountRequestDto {
+public class RefundRequestDto {
     private Integer groupId;
-    private BigDecimal amount;
+    private BigDecimal remainingAmount;
 }

@@ -11,6 +11,6 @@ import java.util.List;
 
 @FeignClient(name = "user-service", url="localhost:8085", configuration = FeignConfig.class)
 public interface UserServiceClient {
-    @PostMapping("/api/v1/user_service/accounts/transaction/group/borrow/deposit")
+    @PostMapping("/api/v1/user-service/accounts/transaction/group/borrow/deposit")
     List<UserResponseDto> requestDisbursement(@RequestBody List<UserRequestDto> requests);
 }
