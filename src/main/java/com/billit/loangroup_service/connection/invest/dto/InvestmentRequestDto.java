@@ -1,5 +1,7 @@
 package com.billit.loangroup_service.connection.invest.dto;
 
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

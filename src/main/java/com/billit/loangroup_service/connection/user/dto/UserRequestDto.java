@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 public class UserRequestDto {
-    private Integer accountBorrowId;
-    private BigDecimal loanAmount;
+    private Integer userBorrowAccountId;
+    private Integer userBorrowId;
+    private BigDecimal amount;
+    private String description;
 }
