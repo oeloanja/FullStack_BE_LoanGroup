@@ -11,7 +11,7 @@ import java.util.List;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("/api/v1/loan_group")
+@RequestMapping("/api/v1/loan-group-service")
 public class LoanGroupController {
     private final LoanGroupService loanGroupService;
 

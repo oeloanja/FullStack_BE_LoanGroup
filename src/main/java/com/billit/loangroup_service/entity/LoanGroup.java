@@ -1,6 +1,7 @@
 package com.billit.loangroup_service.entity;
 
 import com.billit.loangroup_service.enums.RiskLevel;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,7 @@ public class LoanGroup {
     private LocalDateTime createdAt;
 
     @OneToOne(mappedBy = "group", cascade = CascadeType.ALL)
+    @JsonIgnore
     private LoanGroupAccount loanGroupAccount;
 
 

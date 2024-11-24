@@ -2,7 +2,7 @@ package com.billit.loangroup_service.service;
 
 import com.billit.loangroup_service.cache.LoanGroupAccountCache;
 import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
-import com.billit.loangroup_service.connection.invest.dto.InvestmentRequestDto;
+import com.billit.loangroup_service.connection.invest.dto.RefundRequestDto;
 import com.billit.loangroup_service.connection.invest.dto.SettlementRatioRequestDto;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
@@ -12,20 +12,19 @@ import com.billit.loangroup_service.connection.repayment.dto.RepaymentRequestDto
 import com.billit.loangroup_service.connection.user.client.UserServiceClient;
 import com.billit.loangroup_service.connection.user.dto.UserRequestDto;
 import com.billit.loangroup_service.connection.user.dto.UserResponseDto;
+import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
+import com.billit.loangroup_service.event.domain.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.exception.ClosedAccountException;
-import com.billit.loangroup_service.exception.DisbursementFailedException;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -49,6 +48,7 @@ public class LoanGroupAccountService {
     private final LoanGroupRepository loanGroupRepository;
     private final InvestServiceClient investmentServiceClient;
     private final RepaymentClient repaymentClient;
+    private final ApplicationEventPublisher eventPublisher;
     private final RedisTemplate<String, LoanGroupAccount> redisTemplate;
 
     // 계좌 생성
@@ -86,31 +86,53 @@ public class LoanGroupAccountService {
 
     // 현재 입금액 수정: LoanGroupAccount entity 데이터가 편집됨
     @Transactional
-    public void updateLoanGroupAccountBalance(Integer loanGroupId, BigDecimal amount) {
-        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(loanGroupId)
-                .orElseThrow(() -> new LoanGroupNotFoundException(loanGroupId));
+    public void updateLoanGroupAccountBalance(LoanGroupAccountRequestDto investRequest) {
+        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(investRequest.getGroupId())
+                .orElseThrow(() -> new LoanGroupNotFoundException(investRequest.getGroupId()));
 
         if (target.getIsClosed()) {
             throw new ClosedAccountException(target.getLoanGroupAccountId());
         }
 
-        target.updateBalance(amount);
-        loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), amount);
+        BigDecimal newBalance = target.getCurrentBalance().add(investRequest.getAmount());
 
-        if (target.getCurrentBalance().compareTo(target.getRequiredAmount()) >= 0) {
-            target.closeAccount();
-//            investmentServiceClient.updateSettlementRatioByGroupId(new SettlementRatioRequestDto(loanGroupId));
-            processDisbursement(target.getGroup());
+        // 일단 잔액 업데이트
+        target.updateBalance(investRequest.getAmount());
+        loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), investRequest.getAmount());
+
+        // 목표금액 도달/초과 시 이벤트 발행
+        if (newBalance.compareTo(target.getRequiredAmount()) >= 0) {
+            log.info("Investment target amount reached or exceeded for group: {}. Publishing event...",
+                    target.getGroup().getGroupId());
+
+            target.closeAccount(); // 계좌 상태를 먼저 closed로 변경
+            loanGroupAccountRepository.save(target);
+
+            eventPublisher.publishEvent(new LoanGroupInvestmentCompleteEvent(
+                    target.getGroup().getGroupId(),
+                    target.getRequiredAmount(),
+                    newBalance
+            ));
         }
     }
 
-    private void processDisbursement(LoanGroup group) {
+    public void processDisbursement(LoanGroup group, BigDecimal excess) {
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
 
+        // 1. 투자 정산 비율 계산 (이제 마지막 투자까지 포함됨)
+        try {
+            investmentServiceClient.updateSettlementRatioByGroupId(
+                    new SettlementRatioRequestDto(group.getGroupId())
+            );
+        } catch (Exception e) {
+            throw new RuntimeException("투자금 비율 계산 실패");
+        }
+
+        // 2. 대출금 입금 처리
         List<UserRequestDto> disbursementRequests = groupLoans.stream()
                 .map(loan -> {
                     UserRequestDto request = new UserRequestDto(
-                            loan.getUserBorrowAccountId(),
+                            loan.getAccountBorrowId(),
                             loan.getUserBorrowId(),
                             loan.getLoanAmount(),
                             "대출금 입금"
@@ -120,42 +142,60 @@ public class LoanGroupAccountService {
                 })
                 .collect(Collectors.toList());
 
-            try{
-                List<UserResponseDto> response = userServiceClient.requestDisbursement(disbursementRequests);
+        try {
+            userServiceClient.requestDisbursement(disbursementRequests);
+        } catch (Exception e) {
+            throw new RuntimeException("대출금 입금 실패");
+        }
 
-                BigDecimal difference = group.getLoanGroupAccount().getCurrentBalance().subtract(group.getLoanGroupAccount().getRequiredAmount());
-//                if(difference.compareTo(BigDecimal.ZERO) > 0){
-//                    investmentServiceClient.refundUpdateInvestAmount(
-//                            new InvestmentRequestDto(group.getGroupId(), difference)
-//                    );
-//                }
-//                groupLoans.stream()
-//                        .map(request -> new RepaymentRequestDto(
-//                                request.getLoanId(),
-//                                request.getGroupId(),
-//                                request.getLoanAmount(),
-//                                request.getTerm(),
-//                                request.getIntRate(),
-//                                request.getIssueDate()
-//                        ))
-//                        .forEach(repaymentClient::createRepayment);
+        // 3. 대출 상태 업데이트
+        List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
+                .map(loan -> new LoanStatusUpdateRequestDto(
+                        loan.getLoanId(),
+                        1  // EXECUTING의 status 값
+                ))
+                .collect(Collectors.toList());
 
-                // 3. 대출 상태 EXECUTING으로 업데이트
-                List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
-                        .map(loan -> new LoanStatusUpdateRequestDto(
-                                loan.getLoanId(),
-                                1  // EXECUTING의 status 값
-                        ))
-                        .collect(Collectors.toList());
+        try {
+            loanServiceClient.updateLoansStatus(statusUpdateRequests);
+        } catch (Exception e) {
+            throw new RuntimeException("대출 상태 업데이트 실패");
+        }
 
-                loanServiceClient.updateLoansStatus(statusUpdateRequests); // EXECUTING의 ordinal 값
-//                investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
-            }
-            catch (FeignException e){
-                log.error("Feign exception during disbursement: ", e);
-                throw new DisbursementFailedException(group.getGroupId());
+        // 4. 투자 실행일자 업데이트
+        try {
+            investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+        } catch (Exception e) {
+            throw new RuntimeException("투자 실행일자 작성 실패");
+        }
+
+        // 5. 상환 스케줄 생성
+        try {
+            groupLoans.stream()
+                    .map(request -> new RepaymentRequestDto(
+                            request.getLoanId(),
+                            request.getGroupId(),
+                            request.getLoanAmount(),
+                            request.getTerm(),
+                            request.getIntRate(),
+                            request.getIssueDate()
+                    ))
+                    .forEach(repaymentClient::createRepayment);
+        } catch (Exception e) {
+            throw new RuntimeException("상환 생성 실패");
+        }
+
+        // 6. 초과 투자금 반환 (정확한 비율로 계산된 상태에서 실행)
+        if (excess.compareTo(BigDecimal.ZERO) > 0) {
+            try {
+                investmentServiceClient.refundUpdateInvestAmount(
+                        new RefundRequestDto(group.getGroupId(), excess)
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("투자금 반환 실패");
             }
         }
+    }
 
     // GroupId로 Account 찾기
     public LoanGroupAccountResponseDto getAccount(Integer groupId) {

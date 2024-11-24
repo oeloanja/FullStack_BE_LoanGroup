@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Getter
 @AllArgsConstructor
 public class UserRequestDto {
-    private Integer userBorrowAccountId;
+    private Integer accountBorrowId;
     private Integer userBorrowId;
     private BigDecimal amount;
     private String description;

@@ -1,7 +1,5 @@
 package com.billit.loangroup_service.service;
 
-import com.billit.loangroup_service.cache.LoanGroupAccountCache;
-import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanRequestClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
@@ -13,7 +11,6 @@ import com.billit.loangroup_service.exception.GroupAlreadyFulledException;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
-import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
