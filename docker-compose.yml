@@ -1,19 +1,233 @@
-version: '3.8'
 services:
-  redis:
-    image: redis:latest
-    container_name: redis-container
-    ports:
-      - "6379:6379"
-
-  mysql:
+  mysql-loan:
+    container_name: mysql-loan
     image: mysql:latest
-    container_name: mysql-loan-group
+    ports:
+      - "3307:3306"
     environment:
-      MYSQL_ROOT_PASSWORD: 1234
-      MYSQL_DATABASE: loan_group_service
-      MYSQL_USER: root
-      MYSQL_PASSWORD: 1234
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=user_service
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql-user:
+    container_name: mysql-user
+    image: mysql:latest
+    ports:
+      - "3309:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=user_service
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mysql-loan-group:
+    container_name: mysql-loan-group
+    image: mysql:latest
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    restart: always
     ports:
       - "3308:3306"
-    command: --default-authentication-plugin=mysql_native_password
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=loan_group_service
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  postgres-invest:
+    container_name: postgres-invest
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=joyeeun
+      - POSTGRES_PASSWORD=dPdmsdk?0928
+      - POSTGRES_DB=investment_service
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  postgres-repayment:
+    container_name: postgres-repayment
+    image: postgres:latest
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=joyeeun
+      - POSTGRES_PASSWORD=dPdmsdk?0928
+      - POSTGRES_DB=repayment_service
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  redis:
+    container_name: redis
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - msa-network
+
+
+  gateway-service:
+    container_name: gateway-service
+    image: sooook/gateway-service:latest
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+    networks:
+      - msa-network
+    depends_on:
+      eureka-service:
+        condition: service_healthy
+
+  eureka-service:
+    container_name: eureka-service
+    image: sooook/eureka-service
+    ports:
+      - "8761:8761"
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://eureka-service:8761/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+
+#  loan-group-service:
+#    container_name: loan-group-service
+#    image: sooook/loan-group-service:latest
+#    restart: on-failure
+#    ports:
+#      - "8084:8084"
+#    environment:
+#      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+#      - SPRING_DATASOURCE_URL=jdbc:mysql:///mysql-loan-group:3306/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+#      - SPRING_DATASOURCE_USERNAME=root
+#      - SPRING_DATASOURCE_PASSWORD=1234
+#      - SPRING_PROFILES_ACTIVE=docker
+#    networks:
+#      - msa-network
+#    depends_on:
+#      mysql-loan-group:
+#        condition: service_healthy
+#      eureka-service:
+#        condition: service_healthy
+#      redis:
+#        condition: service_started
+
+  loan-service:
+    container_name: loan-service
+    image: sooook/loan-service:latest
+    restart: on-failure
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-loan:3306/loan_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - msa-network
+    depends_on:
+      mysql-loan:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+
+  user-service:
+    container_name: user-service
+    image: sooook/user-service:latest
+    restart: on-failure
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-user:3306/user_service?useSSL=false&createDatabaseIfNotExist=true&serverTimezone=UTC&characterEncoding=UTF-8&allowPublicKeyRetrieval=true&useSSL=false
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - msa-network
+    depends_on:
+      mysql-user:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  invest-service:
+    container_name: invest-service
+    image: sooook/investment-service:latest
+    restart: on-failure
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-invest:5432/investment_service
+      - SPRING_DATASOURCE_USERNAME=joyeeun
+      - SPRING_DATASOURCE_PASSWORD=dPdmsdk?0928
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - msa-network
+    depends_on:
+      postgres-invest:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+
+  repayment-service:
+    container_name: repayment-service
+    image: sooook/repayment-service:latest
+    restart: on-failure
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-repayment:5432/repayment_service
+      - SPRING_DATASOURCE_USERNAME=joyeeun
+      - SPRING_DATASOURCE_PASSWORD=dPdmsdk?0928
+      - SPRING_PROFILES_ACTIVE=docker
+    networks:
+      - msa-network
+    depends_on:
+      postgres-repayment:
+        condition: service_healthy
+      eureka-service:
+        condition: service_healthy
+
+networks:
+  msa-network:
+    driver: bridge
+    attachable: true
