@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:mysql:///mysql-loan-group:3306/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+    url: jdbc:mysql://mysql-loan-group:3306/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
     username: root
     password: 1234
 
@@ -28,6 +28,20 @@ eureka:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
     register-with-eureka: true
     fetch-registry: true
+
+feign:
+  client:
+    config:
+#      loan-group-service:
+#        url: ${LOAN_GROUP_SERVICE_URL:http://loan-group-service:8084}
+      invest-service:
+        url: ${INVEST_SERVICE_URL:http://invest-service:8081}
+      repayment-service:
+        url: ${REPAYMENT_SERVICE_URL:http://repayment-service:8082}
+      loan-service:
+        url: ${LOAN_SERVICE_URL:http://loan-service:8083}
+      user-service:
+        url: ${USER_SERVICE_URL:http://user-service:8085}
 
 logging:
   level:

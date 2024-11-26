@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@FeignClient(name = "loan-service", url = "http://localhost:8083")
+@FeignClient(name = "loan-service")
 public interface LoanServiceClient {
     @GetMapping("/api/v1/loan-service/detail/{loanId}")
     LoanResponseClientDto getLoanById(@PathVariable Integer loanId);
