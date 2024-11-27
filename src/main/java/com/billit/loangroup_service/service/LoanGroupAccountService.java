@@ -81,7 +81,7 @@ public class LoanGroupAccountService {
                 LocalDateTime.now()
         );
         loanGroupAccountRepository.save(account);
-        loanGroupAccountCache.saveToCache(account);
+//        loanGroupAccountCache.saveToCache(account);
     }
 
     // 현재 입금액 수정: LoanGroupAccount entity 데이터가 편집됨
@@ -98,7 +98,7 @@ public class LoanGroupAccountService {
 
         // 일단 잔액 업데이트
         target.updateBalance(investRequest.getAmount());
-        loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), investRequest.getAmount());
+       // loanGroupAccountCache.updateBalanceInCache(target.getLoanGroupAccountId(), investRequest.getAmount());
 
         // 목표금액 도달/초과 시 이벤트 발행
         if (newBalance.compareTo(target.getRequiredAmount()) >= 0) {
@@ -161,6 +161,11 @@ public class LoanGroupAccountService {
         } catch (Exception e) {
             throw new RuntimeException("대출 상태 업데이트 실패");
         }
+
+        groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
+        log.info("Loans reloaded after status update. First loan issueDate: {}",
+                groupLoans.isEmpty() ? "no loans" : groupLoans.get(0).getIssueDate());
+
 
         // 4. 투자 실행일자 업데이트
         try {

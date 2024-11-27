@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "invest-service", url = "http://localhost:8081")
+@FeignClient(name = "INVESTMENT-SERVICE", url = "${feign.client.config.invest-service.url}")
 public interface InvestServiceClient {
     // 차액 반환 요청 api < 수정 필요하다 함
     @PutMapping("/api/v1/invest-service/investments/updateBalance")
