@@ -1,0 +1,8 @@
+FROM openjdk:17-jdk-slim
+WORKDIR /app
+RUN apt-get update && apt-get install -y dos2unix
+COPY . .
+RUN dos2unix gradlew
+RUN chmod +x gradlew
+ENTRYPOINT ["sh", "-c", "./gradlew bootRun --args='--spring.profiles.active=docker'"]
+EXPOSE 8084
