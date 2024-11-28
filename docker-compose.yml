@@ -25,6 +25,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
+    volumes:
+      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -262,6 +264,9 @@ services:
         condition: service_healthy
       eureka-service:
         condition: service_healthy
+
+volumes:
+  mysql-user-data:
 
 networks:
   msa-network:
