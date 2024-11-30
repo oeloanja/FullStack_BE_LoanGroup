@@ -4,31 +4,42 @@ import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Component
-@RequiredArgsConstructor
-public class LoanGroupFullEventListener {
+public class LoanGroupFullEventListener extends AbstractEventListener<LoanGroupFullEvent> {
 
-    private final LoanGroupAccountService loanGroupAccountService;
-    private final LoanGroupRepository loanGroupRepository;
+    public LoanGroupFullEventListener(LoanGroupAccountService loanGroupAccountService, LoanGroupRepository loanGroupRepository) {
+        super(loanGroupAccountService, loanGroupRepository);
+    }
+
+    @Override
+    protected Long getGroupId(LoanGroupFullEvent event) {
+        return Long.valueOf(event.getGroupId());
+    }
+
+    @Override
+    protected void processEvent(LoanGroup group, LoanGroupFullEvent event) {
+        log.info("Processing LoanGroupFullEvent for groupId: {}", group.getGroupId());
+        try {
+            loanGroupAccountService.createLoanGroupAccount(group);
+            log.info("LoanGroupAccount creation completed for groupId: {}", group.getGroupId());
+        } catch (Exception e) {
+            log.error("Error while creating LoanGroupAccount for groupId: {}", group.getGroupId(), e);
+            throw e;
+        }
+    }
 
     @EventListener
     @Async
-    public void handleLoanGroupFullEvent(LoanGroupFullEvent event) {
-        // 트랜잭션 없이 비동기로 실행
-        createPlatformAccountWithNewTransaction(String.valueOf(event.getGroupId()));
-    }
-
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void createPlatformAccountWithNewTransaction(String groupId) {
-        LoanGroup group = loanGroupRepository.findById(Long.valueOf(groupId))
-                .orElseThrow(() -> new IllegalStateException("Group not found"));
-        loanGroupAccountService.createLoanGroupAccount(group);
+    public void onApplicationEvent(LoanGroupFullEvent event) {
+        handleEvent(event);
     }
 }

@@ -68,7 +68,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d investment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -87,7 +87,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d repayment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
