@@ -27,6 +27,8 @@ services:
       - MYSQL_DATABASE=user_service
     networks:
       - msa-network
+    volumes:
+      - mysql-user-data:/var/lib/mysql
     healthcheck:
       test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
       interval: 30s
@@ -264,6 +266,9 @@ services:
         condition: service_healthy
       eureka-service:
         condition: service_healthy
+
+volumes:
+  mysql-user-data:
 
 networks:
   msa-network:
