@@ -65,10 +65,13 @@ services:
       - POSTGRES_USER=joyeeun
       - POSTGRES_PASSWORD=dPdmsdk?0928
       - POSTGRES_DB=investment_service
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: postgres -c listen_addresses='*'
+
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d investment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -84,10 +87,12 @@ services:
       - POSTGRES_USER=joyeeun
       - POSTGRES_PASSWORD=dPdmsdk?0928
       - POSTGRES_DB=repayment_service
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: postgres -c listen_addresses='*'
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d repayment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -127,7 +132,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://eureka-service:8761/actuator/health" ]
+      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5

@@ -68,7 +68,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d investment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -87,7 +87,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U joyeeun" ]
+      test: [ "CMD-SHELL", "pg_isready -U joyeeun -d repayment_service" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -127,7 +127,7 @@ services:
     networks:
       - msa-network
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://eureka-service:8761/actuator/health" ]
+      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
