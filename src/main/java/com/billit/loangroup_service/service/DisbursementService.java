@@ -38,6 +38,7 @@ public class DisbursementService {
         disburseLoanAmounts(groupLoans);
         LocalDate issueDate = LocalDate.now();
         updateLoanStatuses(groupLoans, issueDate);
+        investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
         createRepaymentSchedules(groupLoans, issueDate);
         refundExcessInvestment(group, excess);
     }
