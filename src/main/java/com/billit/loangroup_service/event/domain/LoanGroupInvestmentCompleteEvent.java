@@ -2,14 +2,16 @@ package com.billit.loangroup_service.event.domain;
 
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+@NoArgsConstructor
 @Getter
 public class LoanGroupInvestmentCompleteEvent {
-    private final Integer groupId;
-    private final BigDecimal requiredAmount;
-    private final BigDecimal currentBalance;
+    private Integer groupId;
+    private BigDecimal requiredAmount;
+    private BigDecimal currentBalance;
 
     public LoanGroupInvestmentCompleteEvent(Integer groupId, BigDecimal requiredAmount, BigDecimal currentBalance) {
         this.groupId = groupId;
