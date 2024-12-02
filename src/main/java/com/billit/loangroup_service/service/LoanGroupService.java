@@ -14,6 +14,7 @@ import com.billit.loangroup_service.repository.LoanGroupRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,6 +31,7 @@ import java.util.stream.Collectors;
 public class LoanGroupService {
     private final LoanGroupRepository loanGroupRepository;
     private final LoanServiceClient loanServiceClient;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
     private final ApplicationEventPublisher eventPublisher;
 
     // 멤버 추가: LoanGroup entity 데이터가 편집됨
@@ -60,7 +62,8 @@ public class LoanGroupService {
         if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
             targetGroup.updateGroupAsFull();
             loanGroupRepository.saveAndFlush(targetGroup);
-            eventPublisher.publishEvent(new LoanGroupFullEvent(targetGroup.getGroupId()));
+            kafkaTemplate.send("loan-group-full",
+                    new LoanGroupFullEvent(targetGroup.getGroupId()));
         }
 
         return LoanGroupResponseDto.from(targetGroup);

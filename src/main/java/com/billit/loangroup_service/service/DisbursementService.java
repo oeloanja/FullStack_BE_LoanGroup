@@ -6,6 +6,7 @@ import com.billit.loangroup_service.connection.invest.dto.SettlementRatioRequest
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.connection.loan.dto.LoanStatusUpdateRequestDto;
+import com.billit.loangroup_service.connection.loan.dto.LoanSuccessStatusRequestDto;
 import com.billit.loangroup_service.connection.repayment.client.RepaymentClient;
 import com.billit.loangroup_service.connection.repayment.dto.RepaymentRequestDto;
 import com.billit.loangroup_service.connection.user.client.UserServiceClient;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,8 +36,10 @@ public class DisbursementService {
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
         calculateSettlementRatio(group);
         disburseLoanAmounts(groupLoans);
-        updateLoanStatuses(groupLoans);
-        createRepaymentSchedules(groupLoans);
+        LocalDate issueDate = LocalDate.now();
+        updateLoanStatuses(groupLoans, issueDate);
+        investmentServiceClient.updateInvestmentDatesByGroupId(group.getGroupId());
+        createRepaymentSchedules(groupLoans, issueDate);
         refundExcessInvestment(group, excess);
     }
 
@@ -66,22 +70,24 @@ public class DisbursementService {
         }
     }
 
-    private void updateLoanStatuses(List<LoanResponseClientDto> groupLoans) {
-        List<LoanStatusUpdateRequestDto> statusUpdateRequests = groupLoans.stream()
-                .map(loan -> new LoanStatusUpdateRequestDto(
+    private void updateLoanStatuses(List<LoanResponseClientDto> groupLoans, LocalDate issueDate) {
+        List<LoanSuccessStatusRequestDto> statusUpdateRequests = groupLoans.stream()
+                .map(loan -> new LoanSuccessStatusRequestDto(
                         loan.getLoanId(),
-                        1  // EXECUTING의 status 값
+                        1,
+                        issueDate
                 ))
                 .collect(Collectors.toList());
 
         try {
-            loanServiceClient.updateLoansStatus(statusUpdateRequests);
+            log.info("Sending request data: {}", statusUpdateRequests);
+            loanServiceClient.updateLoansStatusSuccess(statusUpdateRequests);
         } catch (Exception e) {
             throw new RuntimeException("대출 상태 업데이트 실패", e);
         }
     }
 
-    private void createRepaymentSchedules(List<LoanResponseClientDto> groupLoans) {
+    private void createRepaymentSchedules(List<LoanResponseClientDto> groupLoans, LocalDate issueDate) {
         try {
             groupLoans.stream()
                     .map(request -> new RepaymentRequestDto(
@@ -90,7 +96,7 @@ public class DisbursementService {
                             request.getLoanAmount(),
                             request.getTerm(),
                             request.getIntRate(),
-                            request.getIssueDate()
+                            issueDate
                     ))
                     .forEach(repaymentClient::createRepayment);
         } catch (Exception e) {

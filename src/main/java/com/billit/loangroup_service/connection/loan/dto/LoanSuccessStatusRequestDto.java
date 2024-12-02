@@ -9,7 +9,8 @@ import java.time.LocalDate;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoanStatusUpdateRequestDto {
+public class LoanSuccessStatusRequestDto {
     private Integer loanId;
     private int status;
+    private LocalDate issueDate;
 }

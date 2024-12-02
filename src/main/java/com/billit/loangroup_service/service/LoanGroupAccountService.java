@@ -16,6 +16,7 @@ import com.billit.loangroup_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class LoanGroupAccountService {
     private final LoanGroupRepository loanGroupRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final DisbursementService disbursementService;
+    private final KafkaTemplate<String, Object> kafkaTemplate;
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLoanGroupAccount(LoanGroup group) {
@@ -80,16 +82,15 @@ public class LoanGroupAccountService {
 
         if (newBalance.compareTo(target.getRequiredAmount()) >= 0) {
             target.closeAccount();
-            loanGroupAccountRepository.saveAndFlush(target);  // 즉시 DB 반영
+            loanGroupAccountRepository.saveAndFlush(target);
 
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    publishInvestmentCompleteEvent(target, newBalance);
-                }
-            });
-        } else {
-            loanGroupAccountRepository.save(target);
+            // Spring Event 대신 Kafka 사용
+            kafkaTemplate.send("investment-complete",
+                    new LoanGroupInvestmentCompleteEvent(
+                            target.getGroup().getGroupId(),
+                            target.getRequiredAmount(),
+                            newBalance
+                    ));
         }
     }
 
@@ -111,12 +112,12 @@ public class LoanGroupAccountService {
         return LoanGroupAccountResponseDto.from(target);
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void publishInvestmentCompleteEvent(LoanGroupAccount account, BigDecimal newBalance) {
-        eventPublisher.publishEvent(new LoanGroupInvestmentCompleteEvent(
-                account.getGroup().getGroupId(),
-                account.getRequiredAmount(),
-                newBalance
-        ));
-    }
+//    @Transactional(propagation = Propagation.REQUIRES_NEW)
+//    public void publishInvestmentCompleteEvent(LoanGroupAccount account, BigDecimal newBalance) {
+//        eventPublisher.publishEvent(new LoanGroupInvestmentCompleteEvent(
+//                account.getGroup().getGroupId(),
+//                account.getRequiredAmount(),
+//                newBalance
+//        ));
+//    }
 }
