@@ -7,7 +7,9 @@ import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.event.domain.LoanGroupInvestmentCompleteEvent;
+import com.billit.loangroup_service.exception.LoanGroupException;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
+import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
@@ -18,7 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
@@ -26,7 +27,6 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
 
 @Slf4j
 @Service
@@ -46,8 +46,7 @@ public class LoanGroupAccountService {
 
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
         if (groupLoans.isEmpty()) {
-            log.warn("No loans found for groupId: {}", group.getGroupId());
-            return; // 대출이 없는 경우 메서드 종료
+            return;
         }
 
         BigDecimal totalLoanAmount = groupLoans.stream()
@@ -55,12 +54,10 @@ public class LoanGroupAccountService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal averageIntRate = calculateIntRateAvg(groupLoans);
-        log.info("Calculated average interest rate for groupId {}: {}", group.getGroupId(), averageIntRate);
 
         managedGroup.updateIntRateAvg(averageIntRate);
         loanGroupRepository.save(managedGroup);
         loanGroupRepository.flush();
-        log.info("Updated intRateAvg for groupId {}: {}", group.getGroupId(), averageIntRate);
 
         LoanGroupAccount account = new LoanGroupAccount(
                 managedGroup,
@@ -68,10 +65,7 @@ public class LoanGroupAccountService {
                 BigDecimal.ZERO,
                 LocalDateTime.now()
         );
-
-        log.info("Saving LoanGroupAccount for groupId: {}", group.getGroupId());
         loanGroupAccountRepository.save(account);
-        log.info("LoanGroupAccount saved successfully for groupId: {}", group.getGroupId());
     }
 
     @Transactional

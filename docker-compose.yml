@@ -121,7 +121,7 @@ services:
   eureka-service:
     platform: linux/amd64
     container_name: eureka-service
-    image: sooook/eureka-service
+    image: sooook/eureka-service:latest
     ports:
       - "8761:8761"
     networks:
