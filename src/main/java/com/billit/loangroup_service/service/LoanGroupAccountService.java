@@ -6,8 +6,8 @@ import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
+import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
@@ -80,7 +80,6 @@ public class LoanGroupAccountService {
             target.closeAccount();
             loanGroupAccountRepository.saveAndFlush(target);
 
-            // Spring Event 대신 Kafka 사용
             kafkaTemplate.send("investment-complete",
                     new LoanGroupInvestmentCompleteEvent(
                             target.getGroup().getGroupId(),
@@ -107,13 +106,4 @@ public class LoanGroupAccountService {
                 .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
         return LoanGroupAccountResponseDto.from(target);
     }
-
-//    @Transactional(propagation = Propagation.REQUIRES_NEW)
-//    public void publishInvestmentCompleteEvent(LoanGroupAccount account, BigDecimal newBalance) {
-//        eventPublisher.publishEvent(new LoanGroupInvestmentCompleteEvent(
-//                account.getGroup().getGroupId(),
-//                account.getRequiredAmount(),
-//                newBalance
-//        ));
-//    }
 }

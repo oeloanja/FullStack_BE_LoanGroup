@@ -1,27 +1,40 @@
 package com.billit.loangroup_service.kafka.config;
 
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupFullEvent;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.StringSerializer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.kafka.config.TopicBuilder;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.serializer.ErrorHandlingDeserializer;
 import org.springframework.kafka.support.serializer.JsonDeserializer;
+import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.util.backoff.FixedBackOff;
 
 import java.util.HashMap;
 import java.util.Map;
 
+@Slf4j
 @Configuration
 public class KafkaConfig {
+
+    @Autowired
+    private Environment environment;
+
+    @PostConstruct
+    public void checkKafkaConfig() {
+        log.info("Kafka bootstrap servers: {}",
+                environment.getProperty("spring.kafka.bootstrap-servers"));
+    }
 
     @Value("${spring.kafka.bootstrap-servers}")
     private String bootstrapServers;
@@ -29,22 +42,28 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
+    // Producer 설정
     @Bean
-    public NewTopic loanGroupFullTopic() {
-        return TopicBuilder.name("loan-group-full")
-                .partitions(1)
-                .replicas(1)
-                .build();
+    public Map<String, Object> producerConfigs() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, LoanGroupPartitioner.class.getName());
+        return props;
     }
 
     @Bean
-    public NewTopic investmentCompleteTopic() {
-        return TopicBuilder.name("investment-complete")
-                .partitions(1)
-                .replicas(1)
-                .build();
+    public ProducerFactory<String, Object> producerFactory() {
+        return new DefaultKafkaProducerFactory<>(producerConfigs());
     }
 
+    @Bean
+    public KafkaTemplate<String, Object> kafkaTemplate() {
+        return new KafkaTemplate<>(producerFactory());
+    }
+
+    // Consumer 설정
     @Bean
     public Map<String, Object> consumerConfigs() {
         Map<String, Object> props = new HashMap<>();
@@ -58,61 +77,62 @@ public class KafkaConfig {
         return props;
     }
 
+    // Topics
     @Bean
-    public ConsumerFactory<String, LoanGroupFullEvent> loanGroupFullEventConsumerFactory() {
-        JsonDeserializer<LoanGroupFullEvent> deserializer = new JsonDeserializer<>(LoanGroupFullEvent.class);
-        deserializer.setRemoveTypeHeaders(false);
-        deserializer.addTrustedPackages("*");
-        deserializer.setUseTypeMapperForKey(true);
-
-        return new DefaultKafkaConsumerFactory<>(
-                consumerConfigs(),
-                new StringDeserializer(),
-                deserializer
-        );
+    public NewTopic settlementCalculationTopic() {
+        return TopicBuilder.name("settlement-calculation")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 
     @Bean
-    public ConsumerFactory<String, LoanGroupInvestmentCompleteEvent> investmentCompleteEventConsumerFactory() {
-        JsonDeserializer<LoanGroupInvestmentCompleteEvent> deserializer =
-                new JsonDeserializer<>(LoanGroupInvestmentCompleteEvent.class);
-        deserializer.setRemoveTypeHeaders(false);
-        deserializer.addTrustedPackages("*");
-        deserializer.setUseTypeMapperForKey(true);
-
-        return new DefaultKafkaConsumerFactory<>(
-                consumerConfigs(),
-                new StringDeserializer(),
-                deserializer
-        );
+    public NewTopic loanDisbursementTopic() {
+        return TopicBuilder.name("loan-disbursement")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, LoanGroupFullEvent>
-    loanGroupFullEventKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, LoanGroupFullEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(loanGroupFullEventConsumerFactory());
-        factory.setCommonErrorHandler(errorHandler());
-        return factory;
+    public NewTopic loanStatusUpdateTopic() {
+        return TopicBuilder.name("loan-status-update")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, LoanGroupInvestmentCompleteEvent>
-    investmentCompleteEventKafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, LoanGroupInvestmentCompleteEvent> factory =
-                new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(investmentCompleteEventConsumerFactory());
-        factory.setCommonErrorHandler(errorHandler());
-        return factory;
+    public NewTopic investmentDateUpdateTopic() {
+        return TopicBuilder.name("investment-date-update")
+                .partitions(3)
+                .replicas(1)
+                .build();
     }
 
+    @Bean
+    public NewTopic repaymentScheduleTopic() {
+        return TopicBuilder.name("repayment-schedule")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    @Bean
+    public NewTopic excessRefundTopic() {
+        return TopicBuilder.name("excess-refund")
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+
+    // Error Handler
     @Bean
     public DefaultErrorHandler errorHandler() {
         return new DefaultErrorHandler(
                 (consumerRecord, exception) -> {
-                    System.err.println("Error in process with Exception {} and the record is {}"
-                            + exception + consumerRecord);
+                    log.error("Error in process with Exception {} and the record is {}",
+                            exception, consumerRecord);
                 },
                 new FixedBackOff(3000L, 3)
         );

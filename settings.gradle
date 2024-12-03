@@ -1,1 +1,2 @@
 rootProject.name = 'loangroup_service'
+include 'common'

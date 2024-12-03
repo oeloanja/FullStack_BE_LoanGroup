@@ -17,7 +17,7 @@ spring:
     show-sql: true
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: host.docker.internal:9092
     consumer:
       group-id: loan-group-service
       auto-offset-reset: earliest
@@ -30,7 +30,6 @@ spring:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
 
-
   application:
     name: loan-group-service
 
@@ -40,7 +39,7 @@ server:
 eureka:
   instance:
     prefer-ip-address: true
-    ip-address: host.docker.internal
+    ip-address: localhost
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/

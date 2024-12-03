@@ -1,65 +1,65 @@
-spring:
-  datasource:
-    url: jdbc:mysql://mysql-loan-group:3306/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
-    username: root
-    password: 1234
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-    show-sql: true
-
-  redis:
-    host: redis
-    port: 6379
-
-  application:
-    name: loan-group-service
-
-  kafka:
-    bootstrap-servers: kafka:9092
-    consumer:
-      group-id: loan-group-service
-      auto-offset-reset: earliest
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
-      properties:
-        spring.json.trusted.packages: "*"
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
-
-server:
-  port: 8084
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
-    register-with-eureka: true
-    fetch-registry: true
-
-feign:
-  client:
-    config:
-#      loan-group-service:
-#        url: ${LOAN_GROUP_SERVICE_URL:http://loan-group-service:8084}
-      invest-service:
-        url: ${INVEST_SERVICE_URL:http://invest-service:8081}
-      repayment-service:
-        url: ${REPAYMENT_SERVICE_URL:http://repayment-service:8082}
-      loan-service:
-        url: ${LOAN_SERVICE_URL:http://loan-service:8083}
-      user-service:
-        url: ${USER_SERVICE_URL:http://user-service:8085}
-
-logging:
-  level:
-    com:
-      billit: debug
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace
-
+#spring:
+#  datasource:
+#    url: jdbc:mysql://mysql-loan-group:3306/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false
+#    username: root
+#    password: 1234
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.MySQL8Dialect
+#    show-sql: true
+#
+#  redis:
+#    host: redis
+#    port: 6379
+#
+#  application:
+#    name: loan-group-service
+#
+#  kafka:
+#    bootstrap-servers: kafka:9092
+#    consumer:
+#      group-id: loan-group-service
+#      auto-offset-reset: earliest
+#      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+#      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+#      properties:
+#        spring.json.trusted.packages: "*"
+#    producer:
+#      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+#      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+#
+#server:
+#  port: 8084
+#
+#eureka:
+#  client:
+#    service-url:
+#      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE}
+#    register-with-eureka: true
+#    fetch-registry: true
+#
+#feign:
+#  client:
+#    config:
+##      loan-group-service:
+##        url: ${LOAN_GROUP_SERVICE_URL:http://loan-group-service:8084}
+#      invest-service:
+#        url: ${INVEST_SERVICE_URL:http://invest-service:8081}
+#      repayment-service:
+#        url: ${REPAYMENT_SERVICE_URL:http://repayment-service:8082}
+#      loan-service:
+#        url: ${LOAN_SERVICE_URL:http://loan-service:8083}
+#      user-service:
+#        url: ${USER_SERVICE_URL:http://user-service:8085}
+#
+#logging:
+#  level:
+#    com:
+#      billit: debug
+#    org.hibernate.SQL: debug
+#    org.hibernate.type: trace
+#
