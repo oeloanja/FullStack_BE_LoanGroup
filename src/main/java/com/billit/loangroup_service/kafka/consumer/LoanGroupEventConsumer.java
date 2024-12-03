@@ -1,8 +1,8 @@
 package com.billit.loangroup_service.kafka.consumer;
 
 import com.billit.loangroup_service.entity.LoanGroup;
-import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
-import com.billit.loangroup_service.event.domain.LoanGroupInvestmentCompleteEvent;
+import com.billit.loangroup_service.kafka.event.domain.LoanGroupFullEvent;
+import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.service.LoanGroupAccountService;

@@ -1,4 +1,4 @@
-package com.billit.loangroup_service.event.domain;
+package com.billit.loangroup_service.kafka.event.domain;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;

@@ -1,7 +1,7 @@
 package com.billit.loangroup_service.kafka.config;
 
-import com.billit.loangroup_service.event.domain.LoanGroupFullEvent;
-import com.billit.loangroup_service.event.domain.LoanGroupInvestmentCompleteEvent;
+import com.billit.loangroup_service.kafka.event.domain.LoanGroupFullEvent;
+import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
