@@ -6,7 +6,7 @@ import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupFullEvent;
+import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
 import com.billit.loangroup_service.exception.GroupAlreadyFulledException;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.exception.LoanNotFoundException;
@@ -63,6 +63,7 @@ public class LoanGroupService {
             targetGroup.updateGroupAsFull();
             loanGroupRepository.saveAndFlush(targetGroup);
             kafkaTemplate.send("loan-group-full",
+                    targetGroup.getGroupId().toString(),
                     new LoanGroupFullEvent(targetGroup.getGroupId()));
         }
 

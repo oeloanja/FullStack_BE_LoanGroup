@@ -7,7 +7,7 @@ import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
+import com.billit.loangroup_service.kafka.event.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
@@ -81,6 +81,7 @@ public class LoanGroupAccountService {
             loanGroupAccountRepository.saveAndFlush(target);
 
             kafkaTemplate.send("investment-complete",
+                    target.getGroup().getGroupId().toString(),
                     new LoanGroupInvestmentCompleteEvent(
                             target.getGroup().getGroupId(),
                             target.getRequiredAmount(),

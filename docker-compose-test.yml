@@ -92,6 +92,8 @@ services:
       - POSTGRES_USER=joyeeun
       - POSTGRES_PASSWORD=dPdmsdk?0928
       - POSTGRES_DB=investment_service
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: postgres -c listen_addresses='*'
     networks:
       - msa-network
     healthcheck:
@@ -111,6 +113,8 @@ services:
       - POSTGRES_USER=joyeeun
       - POSTGRES_PASSWORD=dPdmsdk?0928
       - POSTGRES_DB=repayment_service
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    command: postgres -c listen_addresses='*'
     networks:
       - msa-network
     healthcheck:
@@ -144,16 +148,7 @@ services:
     depends_on:
       eureka-service:
         condition: service_started
-      loan-service:
-        condition: service_started
-      loan-group-service:
-        condition: service_started
-      user-service:
-        condition: service_started
-      invest-service:
-        condition: service_started
-      repayment-service:
-        condition: service_started
+
 
   eureka-service:
     platform: linux/amd64
@@ -163,11 +158,6 @@ services:
       - "8761:8761"
     networks:
       - msa-network
-#    healthcheck:
-#      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
 
   loan-service:
     container_name: loan-service
@@ -241,6 +231,7 @@ services:
       - INVEST_SERVICE_URL=http://invest-service:8081
       - REPAYMENT_SERVICE_URL=http://repayment-service:8082
       - LOAN_SERVICE_URL=http://loan-service:8083
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
     networks:
       - msa-network
     depends_on:
@@ -250,7 +241,6 @@ services:
         condition: service_started
       redis:
         condition: service_started
-
   invest-service:
     container_name: invest-service
     platform: linux/amd64

@@ -1,9 +1,9 @@
 package com.billit.loangroup_service.service;
 
-import com.billit.common.event.*;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.entity.LoanGroup;
+import com.billit.loangroup_service.kafka.event.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;

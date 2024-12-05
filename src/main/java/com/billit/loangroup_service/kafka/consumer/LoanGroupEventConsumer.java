@@ -1,8 +1,8 @@
 package com.billit.loangroup_service.kafka.consumer;
 
 import com.billit.loangroup_service.entity.LoanGroup;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupFullEvent;
-import com.billit.loangroup_service.kafka.event.domain.LoanGroupInvestmentCompleteEvent;
+import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
+import com.billit.loangroup_service.kafka.event.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
@@ -19,7 +19,11 @@ public class LoanGroupEventConsumer {
     private final LoanGroupAccountService loanGroupAccountService;
     private final LoanGroupRepository loanGroupRepository;
 
-    @KafkaListener(topics = "loan-group-full", groupId = "loan-group-service")
+    @KafkaListener(
+            topics = "loan-group-full",
+            groupId = "loan-group-service",
+            containerFactory = "loanGroupFullEventKafkaListenerContainerFactory"
+    )
     public void handleLoanGroupFullEvent(LoanGroupFullEvent event) {
         try {
             LoanGroup group = loanGroupRepository.findById(Long.valueOf(event.getGroupId()))
@@ -30,7 +34,11 @@ public class LoanGroupEventConsumer {
         }
     }
 
-    @KafkaListener(topics = "investment-complete", groupId = "loan-group-service")
+    @KafkaListener(
+            topics = "investment-complete",
+            groupId = "loan-group-service",
+            containerFactory = "loanGroupInvestmentCompleteEventKafkaListenerContainerFactory"
+    )
     public void handleInvestmentCompleteEvent(LoanGroupInvestmentCompleteEvent event) {
         try {
             LoanGroup group = loanGroupRepository.findById(Long.valueOf(event.getGroupId()))

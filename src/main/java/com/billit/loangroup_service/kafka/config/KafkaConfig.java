@@ -1,5 +1,7 @@
 package com.billit.loangroup_service.kafka.config;
 
+import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
+import com.billit.loangroup_service.kafka.event.LoanGroupInvestmentCompleteEvent;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.admin.NewTopic;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
 import org.springframework.kafka.config.TopicBuilder;
 import org.springframework.kafka.core.*;
 import org.springframework.kafka.listener.DefaultErrorHandler;
@@ -42,13 +45,53 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
-    // Producer 설정
+    @Bean
+    public ConsumerFactory<String, LoanGroupFullEvent> loanGroupFullEventConsumerFactory() {
+        Map<String, Object> props = consumerConfigs();
+        props.put("value.deserializer.type", LoanGroupFullEvent.class);
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new ErrorHandlingDeserializer<>(new CustomJsonDeserializer<>())
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, LoanGroupFullEvent> loanGroupFullEventKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, LoanGroupFullEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(loanGroupFullEventConsumerFactory());
+        factory.setCommonErrorHandler(errorHandler());
+        return factory;
+    }
+
+    @Bean
+    public ConsumerFactory<String, LoanGroupInvestmentCompleteEvent> loanGroupInvestmentCompleteEventConsumerFactory() {
+        Map<String, Object> props = consumerConfigs();
+        props.put("value.deserializer.type", LoanGroupInvestmentCompleteEvent.class);
+        return new DefaultKafkaConsumerFactory<>(
+                props,
+                new StringDeserializer(),
+                new ErrorHandlingDeserializer<>(new CustomJsonDeserializer<>())
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, LoanGroupInvestmentCompleteEvent> loanGroupInvestmentCompleteEventKafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, LoanGroupInvestmentCompleteEvent> factory =
+                new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(loanGroupInvestmentCompleteEventConsumerFactory());
+        factory.setCommonErrorHandler(errorHandler());
+        return factory;
+    }
+
+
     @Bean
     public Map<String, Object> producerConfigs() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CustomJsonSerializer.class);
         props.put(ProducerConfig.PARTITIONER_CLASS_CONFIG, LoanGroupPartitioner.class.getName());
         return props;
     }
@@ -60,7 +103,9 @@ public class KafkaConfig {
 
     @Bean
     public KafkaTemplate<String, Object> kafkaTemplate() {
-        return new KafkaTemplate<>(producerFactory());
+        DefaultKafkaProducerFactory<String, Object> producerFactory = new DefaultKafkaProducerFactory<>(producerConfigs());
+        producerFactory.setValueSerializer(new CustomJsonSerializer());
+        return new KafkaTemplate<>(producerFactory);
     }
 
     // Consumer 설정
@@ -72,7 +117,7 @@ public class KafkaConfig {
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
         props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
+        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, CustomJsonDeserializer.class);
         props.put(JsonDeserializer.TRUSTED_PACKAGES, "*");
         return props;
     }
