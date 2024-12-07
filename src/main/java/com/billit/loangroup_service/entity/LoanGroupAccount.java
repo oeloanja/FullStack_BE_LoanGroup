@@ -63,15 +63,5 @@ public class LoanGroupAccount implements Serializable {
     public void closeAccount(){
         this.isClosed = true;
     }
-
-    public static void handleAccountClosure(LoanGroupAccount account) {
-        log.info("Platform account {} is closed. Required amount: {}, Current balance: {}",
-                account.getLoanGroupAccountId(),
-                account.getRequiredAmount(),
-                account.getCurrentBalance());
-
-        // TODO: 추가적인 마감 처리 로직
-        // 예: 대출 실행 요청, 투자자 알림 등
-    }
 }
 

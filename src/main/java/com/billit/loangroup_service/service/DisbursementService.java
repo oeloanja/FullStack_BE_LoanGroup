@@ -5,7 +5,10 @@ import com.billit.loangroup_service.connection.invest.dto.SettlementRatioRequest
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.entity.LoanGroup;
+import com.billit.loangroup_service.exception.CustomException;
+import com.billit.loangroup_service.exception.ErrorCode;
 import com.billit.loangroup_service.kafka.event.*;
+import com.billit.loangroup_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -26,14 +29,13 @@ public class DisbursementService {
     @Transactional
     public void processDisbursement(LoanGroup group, BigDecimal excess) {
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        LocalDate issueDate = LocalDate.now();
+        ValidationUtils.validateLoanExistence(groupLoans);
 
+        LocalDate issueDate = LocalDate.now();
         List<LoanResponseClientEventDto> eventDto = convertToEventDto(groupLoans);
 
-        // 정산 계산 (REST API)
         calculateSettlement(group.getGroupId());
 
-        // Kafka 이벤트 발행
         sendDisbursementEvent(eventDto, group.getGroupId());
         sendStatusUpdateEvent(eventDto, group.getGroupId(), issueDate);
         sendInvestmentDateUpdateEvent(group.getGroupId());
@@ -49,12 +51,11 @@ public class DisbursementService {
         try {
             SettlementRatioRequestDto request = new SettlementRatioRequestDto(groupId);
             investServiceClient.updateSettlementRatioByGroupId(request);
-            log.info("Settlement calculation completed for group: {}", groupId);
         } catch (Exception e) {
-            log.error("Settlement calculation failed for group: {}", groupId, e);
-            throw new RuntimeException("Settlement calculation failed", e);
+            throw new CustomException(ErrorCode.DISBURSEMENT_FAILED, groupId);
         }
     }
+
 
     private void sendDisbursementEvent(List<LoanResponseClientEventDto> groupLoans, Integer groupId) {
         String key = String.valueOf(groupId);

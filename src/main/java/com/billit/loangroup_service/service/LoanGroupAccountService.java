@@ -6,14 +6,14 @@ import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
-import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
+import com.billit.loangroup_service.exception.CustomException;
+import com.billit.loangroup_service.exception.ErrorCode;
 import com.billit.loangroup_service.kafka.event.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -39,12 +39,11 @@ public class LoanGroupAccountService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLoanGroupAccount(LoanGroup group) {
         Optional<LoanGroup> optionalGroup = loanGroupRepository.findById(Long.valueOf(group.getGroupId()));
-        LoanGroup managedGroup = optionalGroup.orElseThrow(() -> new LoanGroupNotFoundException(group.getGroupId()));
+        ValidationUtils.validateLoanGroupExistence(optionalGroup, group.getGroupId());
+        LoanGroup managedGroup = optionalGroup.get();
 
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        if (groupLoans.isEmpty()) {
-            return;
-        }
+        ValidationUtils.validateLoanExistence(groupLoans);
 
         BigDecimal totalLoanAmount = groupLoans.stream()
                 .map(LoanResponseClientDto::getLoanAmount)
@@ -68,7 +67,7 @@ public class LoanGroupAccountService {
     @Transactional
     public void updateLoanGroupAccountBalance(LoanGroupAccountRequestDto investRequest) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(investRequest.getGroupId())
-                .orElseThrow(() -> new LoanGroupNotFoundException(investRequest.getGroupId()));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, investRequest.getGroupId()));
 
         ValidationUtils.validateAccountNotClosed(target);
 
@@ -103,7 +102,7 @@ public class LoanGroupAccountService {
 
     public LoanGroupAccountResponseDto getAccount(Integer groupId) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(groupId)
-                .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, groupId));
         return LoanGroupAccountResponseDto.from(target);
     }
 }

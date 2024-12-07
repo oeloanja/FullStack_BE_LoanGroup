@@ -7,10 +7,8 @@ import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
 import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
-import com.billit.loangroup_service.exception.GroupAlreadyFulledException;
-import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
-import com.billit.loangroup_service.exception.LoanNotFoundException;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
+import com.billit.loangroup_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -37,11 +36,9 @@ public class LoanGroupService {
     // 멤버 추가: LoanGroup entity 데이터가 편집됨
     @Transactional
     public LoanGroupResponseDto assignGroup(LoanRequestClientDto request) {
-        // 대출 받아오기
         LoanResponseClientDto loanResponseClient = loanServiceClient.getLoanById(request.getLoanId());
-        if (loanResponseClient == null) {
-            throw new LoanNotFoundException(request.getLoanId());
-        }
+        ValidationUtils.validateLoanExistence(loanResponseClient, request.getLoanId());
+
         BigDecimal intRate = loanResponseClient.getIntRate();
         RiskLevel riskLevel = RiskLevel.fromInterestRate(intRate);
         List<LoanGroup> activeGroups = loanGroupRepository.findAllByRiskLevelAndIsFulledFalseOrderByMemberCountDesc(riskLevel);
@@ -54,9 +51,7 @@ public class LoanGroupService {
             targetGroup = activeGroups.get(0);
         }
 
-        if (targetGroup.getIsFulled()) {
-            throw new GroupAlreadyFulledException(targetGroup.getGroupId());
-        }
+        ValidationUtils.validateGroupNotFull(targetGroup);
 
         targetGroup.incrementMemberCount();
         if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
@@ -80,8 +75,8 @@ public class LoanGroupService {
 
     // 특정 그룹 정보 조회
     public LoanGroupResponseDto getGroupDetails(Integer groupId) {
-        return loanGroupRepository.findById(Long.valueOf(groupId))
-                .map(LoanGroupResponseDto::from)
-                .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
+        Optional<LoanGroup> group = loanGroupRepository.findById(Long.valueOf(groupId));
+        ValidationUtils.validateLoanGroupExistence(group, groupId);
+        return LoanGroupResponseDto.from(group.get());
     }
 }
