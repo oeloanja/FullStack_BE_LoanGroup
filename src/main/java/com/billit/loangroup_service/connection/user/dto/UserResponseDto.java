@@ -10,5 +10,5 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserResponseDto {
-    private List<Boolean> success;  // 각 요청별 처리 결과
+    private List<Boolean> success;
 }

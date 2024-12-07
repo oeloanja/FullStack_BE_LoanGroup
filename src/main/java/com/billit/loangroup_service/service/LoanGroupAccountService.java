@@ -33,7 +33,6 @@ public class LoanGroupAccountService {
     private final LoanGroupAccountRepository loanGroupAccountRepository;
     private final LoanServiceClient loanServiceClient;
     private final LoanGroupRepository loanGroupRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final DisbursementService disbursementService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 

@@ -1,5 +1,7 @@
 package com.billit.loangroup_service.service;
 
+import com.billit.loangroup_service.connection.invest.client.InvestServiceClient;
+import com.billit.loangroup_service.connection.invest.dto.SettlementRatioRequestDto;
 import com.billit.loangroup_service.connection.loan.client.LoanServiceClient;
 import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.entity.LoanGroup;
@@ -13,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DisbursementService {
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final LoanServiceClient loanServiceClient;
+    private final InvestServiceClient investServiceClient;
 
     @Transactional
     public void processDisbursement(LoanGroup group, BigDecimal excess) {
@@ -28,9 +30,10 @@ public class DisbursementService {
 
         List<LoanResponseClientEventDto> eventDto = convertToEventDto(groupLoans);
 
+        // 정산 계산 (REST API)
+        calculateSettlement(group.getGroupId());
 
-        // 각 단계별 이벤트 발행
-        sendCalculationEvent(group.getGroupId());
+        // Kafka 이벤트 발행
         sendDisbursementEvent(eventDto, group.getGroupId());
         sendStatusUpdateEvent(eventDto, group.getGroupId(), issueDate);
         sendInvestmentDateUpdateEvent(group.getGroupId());
@@ -41,19 +44,16 @@ public class DisbursementService {
         }
     }
 
-    private void sendCalculationEvent(Integer groupId) {
-        String key = String.valueOf(groupId);
-        SettlementCalculationEvent event = new SettlementCalculationEvent(groupId, "INITIATED");
-
-        kafkaTemplate.send("settlement-calculation", key, event)
-                .whenComplete((success, failure) -> {
-                    if (failure == null) {
-                        log.info("Settlement calculation event sent, partition: {}",
-                                success.getRecordMetadata().partition());
-                    } else {
-                        log.error("Settlement calculation event failed", failure);
-                    }
-                });
+    // REST API 메서드
+    private void calculateSettlement(Integer groupId) {
+        try {
+            SettlementRatioRequestDto request = new SettlementRatioRequestDto(groupId);
+            investServiceClient.updateSettlementRatioByGroupId(request);
+            log.info("Settlement calculation completed for group: {}", groupId);
+        } catch (Exception e) {
+            log.error("Settlement calculation failed for group: {}", groupId, e);
+            throw new RuntimeException("Settlement calculation failed", e);
+        }
     }
 
     private void sendDisbursementEvent(List<LoanResponseClientEventDto> groupLoans, Integer groupId) {
@@ -129,6 +129,7 @@ public class DisbursementService {
                     }
                 });
     }
+
     private List<LoanResponseClientEventDto> convertToEventDto(List<LoanResponseClientDto> groupLoans) {
         return groupLoans.stream()
                 .map(dto -> new LoanResponseClientEventDto(
@@ -142,5 +143,4 @@ public class DisbursementService {
                 ))
                 .toList();
     }
-
 }
