@@ -1,6 +1,7 @@
 package com.billit.loangroup_service.dto;
 
 import com.billit.loangroup_service.entity.LoanGroupAccount;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;

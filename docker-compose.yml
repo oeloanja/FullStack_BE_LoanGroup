@@ -52,8 +52,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
-    volumes:
-      - mysql-user-data:/var/lib/mysql
+#    volumes:
+#      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -172,7 +172,7 @@ services:
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:latest
+    image: sooook/loan-service:test
     restart: on-failure
     ports:
       - "8083:8083"
@@ -198,7 +198,7 @@ services:
   user-service:
     container_name: user-service
     platform: linux/amd64
-    image: sooook/user-service:latest
+    image: sooook/user-service:test
     restart: on-failure
     ports:
       - "8085:8085"
@@ -226,7 +226,7 @@ services:
   loan-group-service:
     container_name: loan-group-service
     platform: linux/amd64
-    image: sooook/loan-group-service:latest
+    image: sooook/loan-group-service:test
     restart: on-failure
     ports:
       - "8084:8084"
@@ -254,7 +254,7 @@ services:
   invest-service:
     container_name: invest-service
     platform: linux/amd64
-    image: sooook/invest-service:latest
+    image: sooook/invest-service:test
     restart: on-failure
     ports:
       - "8081:8081"
@@ -280,7 +280,7 @@ services:
   repayment-service:
     container_name: repayment-service
     platform: linux/amd64
-    image: sooook/repayment-service:latest
+    image: sooook/repayment-service:test
     restart: on-failure
     ports:
       - "8082:8082"
@@ -303,8 +303,8 @@ services:
       eureka-service:
         condition: service_started
 
-volumes:
-  mysql-user-data:
+#volumes:
+#  mysql-user-data:
 
 networks:
   msa-network:

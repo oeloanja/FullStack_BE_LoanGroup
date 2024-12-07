@@ -46,11 +46,9 @@ public class DisbursementService {
         }
     }
 
-    // REST API 메서드
     private void calculateSettlement(Integer groupId) {
         try {
-            SettlementRatioRequestDto request = new SettlementRatioRequestDto(groupId);
-            investServiceClient.updateSettlementRatioByGroupId(request);
+            investServiceClient.updateSettlementRatioByGroupId(new SettlementRatioRequestDto(groupId));
         } catch (Exception e) {
             throw new CustomException(ErrorCode.DISBURSEMENT_FAILED, groupId);
         }

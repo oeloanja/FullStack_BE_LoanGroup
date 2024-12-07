@@ -5,6 +5,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
@@ -13,7 +14,7 @@ public class LoanResponseClientEventDto {
     private Integer loanId;
     private Integer groupId;
     private Integer accountBorrowId;
-    private Integer userBorrowId;
+    private UUID userBorrowId;
     private BigDecimal loanAmount;
     private Integer term;
     private BigDecimal intRate;
