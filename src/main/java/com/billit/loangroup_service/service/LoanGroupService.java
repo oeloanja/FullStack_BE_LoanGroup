@@ -31,7 +31,6 @@ public class LoanGroupService {
     private final LoanGroupRepository loanGroupRepository;
     private final LoanServiceClient loanServiceClient;
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final ApplicationEventPublisher eventPublisher;
 
     // 멤버 추가: LoanGroup entity 데이터가 편집됨
     @Transactional
