@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 @Repository
@@ -42,6 +43,6 @@ public interface LoanGroupRepository extends JpaRepository<LoanGroup, Long> {
             nativeQuery = true)
     int countByRiskLevelAndMemberCountAndIsFullFalse(@Param("riskLevel") int riskLevel);
 
-
+    List<LoanGroup> findByCreatedAtLessThanAndIsFulledFalse(LocalDateTime threshold);
     List<LoanGroup> findByRiskLevelAndLoanGroupAccount_IsClosedFalse(RiskLevel riskLevel);
 }
