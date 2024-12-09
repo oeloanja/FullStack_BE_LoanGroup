@@ -305,7 +305,7 @@ services:
 #  chatbot-proxy:
 #    container_name: chatbot-proxy
 #    platform: linux/amd64
-#    image: sooook/chatbot-proxy:latest  # Spring Boot 프록시 서버
+#    image: sooook/chatbot-proxy-service:latest  # Spring Boot 프록시 서버
 #    restart: on-failure
 #    ports:
 #      - "8086:8086"
