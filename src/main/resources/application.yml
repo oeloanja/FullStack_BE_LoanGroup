@@ -3,6 +3,10 @@ spring:
     url: jdbc:mysql://localhost:3308/loan_group_service?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
     username: root
     password: 1234
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 3000
 
   redis:
     host: localhost

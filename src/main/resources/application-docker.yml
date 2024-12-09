@@ -64,7 +64,6 @@ feign:
 
 logging:
   level:
-    com:
-      billit: debug
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace
+    com.billit.loangroup_service: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql: TRACE

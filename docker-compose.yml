@@ -172,7 +172,7 @@ services:
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:test
+    image: sooook/loan-service:latest
     restart: on-failure
     ports:
       - "8083:8083"
@@ -198,7 +198,7 @@ services:
   user-service:
     container_name: user-service
     platform: linux/amd64
-    image: sooook/user-service:test
+    image: sooook/user-service:latest
     restart: on-failure
     ports:
       - "8085:8085"
@@ -226,7 +226,7 @@ services:
   loan-group-service:
     container_name: loan-group-service
     platform: linux/amd64
-    image: sooook/loan-group-service:test
+    image: sooook/loan-group-service:latest
     restart: on-failure
     ports:
       - "8084:8084"
@@ -254,7 +254,7 @@ services:
   invest-service:
     container_name: invest-service
     platform: linux/amd64
-    image: sooook/invest-service:test
+    image: sooook/invest-service:latest
     restart: on-failure
     ports:
       - "8081:8081"
@@ -280,7 +280,7 @@ services:
   repayment-service:
     container_name: repayment-service
     platform: linux/amd64
-    image: sooook/repayment-service:test
+    image: sooook/repayment-service:latest
     restart: on-failure
     ports:
       - "8082:8082"
