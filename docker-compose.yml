@@ -26,6 +26,23 @@ services:
     networks:
       - msa-network
 
+  mysqlchatbot:
+    platform: linux/amd64
+    container_name: mysqlchatbot
+    image: mysql:latest
+    ports:
+      - "3310:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=chat_history
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   mysql-loan:
     platform: linux/amd64
     container_name: mysql-loan
@@ -302,33 +319,33 @@ services:
         condition: service_healthy
       eureka-service:
         condition: service_started
-#  chatbot-proxy:
-#    container_name: chatbot-proxy
-#    platform: linux/amd64
-#    image: sooook/chatbot-proxy-service:latest  # Spring Boot 프록시 서버
-#    restart: on-failure
-#    ports:
-#      - "8086:8086"
-#    environment:
-#      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
-#      - CHATBOT_SERVER_URL=http://chatbot-service:8000  # Python 챗봇 서버 URL
-#    networks:
-#      - msa-network
-#    depends_on:
-#      eureka-service:
-#        condition: service_started
-#
-#  chatbot-service: # Python 챗봇 서버
-#    container_name: chatbot-service
-#    platform: linux/amd64
-#    image: jayiuk/chatbot:third
-#    ports:
-#      - "8000:8000"
-#    networks:
-#      - msa-network
+  chatbot-proxy:
+    container_name: chatbot-proxy
+    platform: linux/amd64
+    image: sooook/chatbot-proxy-service:latest  # Spring Boot 프록시 서버
+    restart: on-failure
+    ports:
+      - "8086:8086"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - CHATBOT_SERVER_URL=http://chatbot-service:8000  # Python 챗봇 서버 URL
+    networks:
+      - msa-network
+    depends_on:
+      eureka-service:
+        condition: service_started
 
-#volumes:
-#  mysql-user-data:
+  chatbot-service: # Python 챗봇 서버
+    container_name: chatbot-service
+    platform: linux/amd64
+    image: jayiuk/chatbot:15th
+    ports:
+      - "8000:8000"
+    networks:
+      - msa-network
+
+volumes:
+  mysql-user-data:
 
 networks:
   msa-network:
