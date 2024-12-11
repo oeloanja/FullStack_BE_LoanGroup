@@ -14,7 +14,6 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -29,7 +28,6 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 import static com.billit.loangroup_service.exception.ErrorCode.*;
@@ -49,6 +47,7 @@ public class LoanGroupService {
     private EntityManager entityManager;
 
     private static final int MIN_EMPTY_GROUPS_PER_RISK = 3;
+    private static final long GROUP_TIMEOUT_HOURS = 24;
 
     @Transactional
     public LoanGroupResponseDto assignGroup(LoanRequestClientDto request) {
@@ -130,6 +129,29 @@ public class LoanGroupService {
         return "GR" + UUID.randomUUID();
     }
 
+    @Scheduled(cron = "0 0 0 * * *")
+    @Transactional
+    public void checkAndCloseStaleGroups() {
+        try {
+            log.info("밤이 되었습니다. 아직 완성되지 못한 그룹은 눈을 떠주세요...");
+            LocalDateTime timeoutThreshold = LocalDateTime.now().minusHours(GROUP_TIMEOUT_HOURS);
+            List<LoanGroup> staleGroups = loanGroupRepository.findByCreatedAtLessThanAndIsFulledFalse(timeoutThreshold);
+
+            for (LoanGroup group : staleGroups) {
+                if (group.getMemberCount() > 0) {
+                    group.updateGroupAsFull();
+                    loanGroupRepository.save(group);
+
+                    kafkaTemplate.send("loan-group-full",
+                            group.getGroupId().toString(),
+                            new LoanGroupFullEvent(group.getGroupId()));
+                }
+            }
+
+        } catch (Exception e) {
+            throw new CustomException(INVALID_PARAMETER, "오래된 그룹 처리 중 오류가 발생했습니다.");
+        }
+    }
 
     // 투자 가능한 그룹 목록 조회
     public List<LoanGroupResponseDto> getActiveGroups(RiskLevel riskLevel) {

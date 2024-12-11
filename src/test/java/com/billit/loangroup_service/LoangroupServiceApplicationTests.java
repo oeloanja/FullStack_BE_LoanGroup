@@ -12,6 +12,8 @@ import com.billit.loangroup_service.service.LoanGroupService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,6 +22,8 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,6 +41,8 @@ class LoangroupServiceApplicationTests {
     private KafkaTemplate<String, Object> kafkaTemplate;
     @InjectMocks
     private LoanGroupService loanGroupService;
+    @Captor
+    private ArgumentCaptor<LoanGroup> loanGroupCaptor;
 
     @Test
     @DisplayName("대출 그룹 배정 - 정상 케이스 (LOW 리스크)")
@@ -160,5 +166,87 @@ class LoangroupServiceApplicationTests {
         assertThatThrownBy(() -> loanGroupService.assignGroup(request))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("멤버 배정에 실패했습니다.");
+    }
+
+    @Test
+    void shouldCloseStaleGroupsWithMembers() {
+        // Given
+        LocalDateTime oldTime = LocalDateTime.now().minusHours(25); // 25시간 전
+        LoanGroup staleGroupWithMembers = createStaleGroup(3, oldTime);
+        LoanGroup staleGroupWithoutMembers = createStaleGroup(0, oldTime);
+
+        when(loanGroupRepository.findByCreatedAtLessThanAndIsFulledFalse(any()))
+                .thenReturn(Arrays.asList(staleGroupWithMembers, staleGroupWithoutMembers));
+
+        // When
+        loanGroupService.checkAndCloseStaleGroups();
+
+        // Then
+        verify(loanGroupRepository).save(loanGroupCaptor.capture());
+        LoanGroup savedGroup = loanGroupCaptor.getValue();
+        assertThat(savedGroup.getIsFulled()).isTrue();
+        assertThat(savedGroup.getGroupId()).isEqualTo(staleGroupWithMembers.getGroupId());
+
+        // Kafka 이벤트 발행 확인
+        verify(kafkaTemplate).send(
+                eq("loan-group-full"),
+                eq(staleGroupWithMembers.getGroupId().toString()),
+                any(LoanGroupFullEvent.class)
+        );
+
+        // 멤버가 없는 그룹은 처리되지 않았는지 확인
+        verify(kafkaTemplate, never()).send(
+                eq("loan-group-full"),
+                eq(staleGroupWithoutMembers.getGroupId().toString()),
+                any(LoanGroupFullEvent.class)
+        );
+    }
+
+    private LoanGroup createStaleGroup(int memberCount, LocalDateTime createdAt) {
+        LoanGroup group = new LoanGroup(
+                "TEST-" + memberCount,
+                RiskLevel.LOW,
+                createdAt
+        );
+
+        ReflectionTestUtils.setField(group, "groupId", memberCount);
+
+        for (int i = 1; i < memberCount; i++) {
+            group.incrementMemberCount();
+        }
+
+        return group;
+    }
+
+    @Test
+    void shouldNotCloseRecentGroups() {
+        // Given
+        LocalDateTime recentTime = LocalDateTime.now().minusHours(23); // 23시간 전
+        LoanGroup recentGroup = createStaleGroup(3, recentTime);
+
+        // when절을 수정: 아무 그룹도 반환하지 않도록
+        when(loanGroupRepository.findByCreatedAtLessThanAndIsFulledFalse(any()))
+                .thenReturn(Collections.emptyList());  // 빈 리스트 반환
+
+        // When
+        loanGroupService.checkAndCloseStaleGroups();
+
+        // Then
+        verify(loanGroupRepository, never()).save(any());
+        verify(kafkaTemplate, never()).send(anyString(), anyString(), any());
+    }
+
+    @Test
+    void shouldHandleEmptyStaleGroups() {
+        // Given
+        when(loanGroupRepository.findByCreatedAtLessThanAndIsFulledFalse(any()))
+                .thenReturn(Collections.emptyList());
+
+        // When
+        loanGroupService.checkAndCloseStaleGroups();
+
+        // Then
+        verify(loanGroupRepository, never()).save(any());
+        verify(kafkaTemplate, never()).send(anyString(), anyString(), any());
     }
 }
