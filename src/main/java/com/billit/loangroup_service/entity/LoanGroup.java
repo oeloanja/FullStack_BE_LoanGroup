@@ -49,10 +49,6 @@ public class LoanGroup {
         this.intRateAvg = BigDecimal.valueOf(0.0);
     }
 
-    public boolean isNearlyFull() {
-        return this.memberCount >= (MAX_MEMBERS * 0.9);
-    }
-
     public void updateGroupAsFull(){
         this.isFulled = true;
     }
@@ -63,9 +59,5 @@ public class LoanGroup {
 
     public void updateIntRateAvg(BigDecimal avg) {
         this.intRateAvg = avg;
-    }
-    public static boolean isAllActiveGroupsNearlyFull(List<LoanGroup> activeGroups) {
-        return activeGroups.stream()
-                .allMatch(LoanGroup::isNearlyFull);
     }
 }

@@ -43,6 +43,26 @@ services:
       timeout: 10s
       retries: 3
 
+
+  mysql-mydata:
+    platform: linux/amd64
+    container_name: mysql-mydata
+    image: mysql:latest
+    ports:
+      - "3311:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=mydata
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    volumes:
+      - mysql-mydata-data:/var/lib/mysql
+
   mysql-loan:
     platform: linux/amd64
     container_name: mysql-loan
@@ -69,8 +89,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
-#    volumes:
-#      - mysql-user-data:/var/lib/mysql
+    volumes:
+      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -189,7 +209,7 @@ services:
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:test
+    image: sooook/loan-service:credit
     restart: on-failure
     ports:
       - "8083:8083"
@@ -215,7 +235,7 @@ services:
   user-service:
     container_name: user-service
     platform: linux/amd64
-    image: sooook/user-service:test
+    image: sooook/user-service:credit
     restart: on-failure
     ports:
       - "8085:8085"
@@ -323,27 +343,27 @@ services:
   chatbot-proxy:
     container_name: chatbot-proxy
     platform: linux/amd64
-    image: sooook/chatbot-proxy-service:latest  # Spring Boot 프록시 서버
+    image: sooook/chatbot-proxy-service:latest
     restart: on-failure
     ports:
       - "8086:8086"
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
-      - CHATBOT_SERVER_URL=http://chatbot-service:8000  # Python 챗봇 서버 URL
+      - CHATBOT_SERVER_URL=http://chatbot-service:8000
     networks:
       - msa-network
     depends_on:
       eureka-service:
         condition: service_started
 
-  chatbot-service: # Python 챗봇 서버
-    container_name: chatbot-service
-    platform: linux/amd64
-    image: jayiuk/chatbot:15th
-    ports:
-      - "8000:8000"
-    networks:
-      - msa-network
+#  chatbot-service: # Python 챗봇 서버
+#    container_name: chatbot-service
+#    platform: linux/amd64
+#    image: jayiuk/chatbot:15th
+#    ports:
+#      - "8000:8000"
+#    networks:
+#      - msa-network
 
   pdf-service:
     container_name: pdf-service
@@ -359,17 +379,36 @@ services:
   credit-proxy:
     container_name: credit-service-proxy
     platform: linux/amd64
-    image: sooook/credit-proxy-service:latest
+    image: sooook/credit-proxy-service:test
     environment:
       - SERVICES_PDF_EXTRACTOR_URL=http://pdf-service:4000
-#      - SERVICES_CREDIT_MODEL_URL=http://credit-service:4040 # 포트번호 바꿔야할수 있음
+      - SERVICES_CREDIT_MODEL_URL=http://credit-service:80 # 포트번호 바꿔야할수 있음
+      - SPRING_PROFILES_ACTIVE=docker
+      - USER_SERVICE_URL=http://user-service:8085
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-mydata:3306/mydata?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
     ports:
       - "8090:8090"
+    networks:
+      - msa-network
+    depends_on:
+      mysql-mydata:
+        condition: service_healthy
+
+
+  credit-service:
+    container_name: credit-service
+    platform: linux/amd64
+    image: jijoungee/fastapi-monitoring:3st
+    ports:
+      - "80:80"
     networks:
       - msa-network
 
 volumes:
   mysql-user-data:
+  mysql-mydata-data:
 
 networks:
   msa-network:
