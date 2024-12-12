@@ -348,11 +348,13 @@ services:
   pdf-service:
     container_name: pdf-service
     platform: linux/amd64
-    image: jayiuk/screening:2nd
+    image: jayiuk/screeninginput:12th
     ports:
       - "4000:4000"
     networks:
       - msa-network
+    env_file:
+      - .env
 
   credit-proxy:
     container_name: credit-service-proxy
