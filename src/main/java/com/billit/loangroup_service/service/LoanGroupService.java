@@ -6,6 +6,7 @@ import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
+import com.billit.loangroup_service.enums.RiskLevelResult;
 import com.billit.loangroup_service.exception.CustomException;
 import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
@@ -55,12 +56,18 @@ public class LoanGroupService {
             LoanResponseClientDto requestLoan = Optional.ofNullable(loanServiceClient.getLoanById(request.getLoanId()))
                     .orElseThrow(() -> new CustomException(LOAN_NOT_FOUND, request.getLoanId()));
 
-            RiskLevel riskLevel = RiskLevel.calculateRiskLevel(requestLoan.getIntRate(), requestLoan.getLoanAmount(), requestLoan.getLoanLimit());
+            RiskLevelResult riskResult = RiskLevel.calculateRiskLevel(
+                    requestLoan.getIntRate(),
+                    requestLoan.getLoanAmount(),
+                    requestLoan.getLoanLimit()
+            );
 
             Long groupId = loanGroupRepository.findAvailableGroupId(
-                    riskLevel.ordinal(),
+                    riskResult.riskLevel().ordinal(),
                     LoanGroup.MAX_MEMBERS
             ).orElseThrow(() -> new CustomException(LOAN_GROUP_NOT_FOUND, "배정 가능한 그룹이 없습니다. 잠시 후 다시 시도해주세요."));
+
+            loanServiceClient.updateLoanInterestRate(request.getLoanId(), riskResult.adjustedRate());
 
             int updated = loanGroupRepository.incrementMemberCount(groupId);
             if (updated != 1) {
@@ -83,10 +90,10 @@ public class LoanGroupService {
             }
             return LoanGroupResponseDto.from(targetGroup);
         } catch (Exception e) {
+            log.error("대출 그룹 배정 중 오류 발생: {}", e.getMessage(), e);
             throw new CustomException(INVALID_PARAMETER, "예기치 못한 오류가 발생했습니다.");
         }
     }
-
     @Transactional
     @Async
     public void checkAndReplenishGroupPool(RiskLevel riskLevel) {
