@@ -105,4 +105,10 @@ public class LoanGroupAccountService {
                 .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, groupId));
         return LoanGroupAccountResponseDto.from(target);
     }
+
+    public void updateAccountStatusOpened(Integer groupId){
+        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(groupId)
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, groupId));
+        target.reopenAccount();
+    }
 }

@@ -209,7 +209,7 @@ services:
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:latest
+    image: sooook/loan-service:test
     restart: on-failure
     ports:
       - "8083:8083"
@@ -235,7 +235,7 @@ services:
   user-service:
     container_name: user-service
     platform: linux/amd64
-    image: sooook/user-service:latest
+    image: sooook/user-service:test
     restart: on-failure
     ports:
       - "8085:8085"
@@ -263,7 +263,7 @@ services:
   loan-group-service:
     container_name: loan-group-service
     platform: linux/amd64
-    image: sooook/loan-group-service:latest
+    image: sooook/loan-group-service:test
     restart: on-failure
     ports:
       - "8084:8084"
@@ -291,7 +291,7 @@ services:
   invest-service:
     container_name: invest-service
     platform: linux/amd64
-    image: sooook/invest-service:latest
+    image: sooook/invest-service:test
     restart: on-failure
     ports:
       - "8081:8081"
@@ -317,7 +317,7 @@ services:
   repayment-service:
     container_name: repayment-service
     platform: linux/amd64
-    image: sooook/repayment-service:latest
+    image: sooook/repayment-service:test
     restart: on-failure
     ports:
       - "8082:8082"
@@ -403,6 +403,15 @@ services:
     image: jijoungee/fastapi-monitoring:3st
     ports:
       - "80:80"
+    networks:
+      - msa-network
+
+  chatbot-service-non: # Python 챗봇 서버
+    container_name: chatbot-service-non
+    platform: linux/amd64
+    image: jayiuk/nologin:6th
+    ports:
+      - "8070:8070"
     networks:
       - msa-network
 

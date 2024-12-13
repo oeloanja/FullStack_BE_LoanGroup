@@ -253,4 +253,6 @@ class LoangroupServiceApplicationTests {
         verify(loanGroupRepository, never()).save(any());
         verify(kafkaTemplate, never()).send(anyString(), anyString(), any());
     }
+
+
 }

@@ -63,5 +63,7 @@ public class LoanGroupAccount implements Serializable {
     public void closeAccount(){
         this.isClosed = true;
     }
+    public void reopenAccount() { this.isClosed = false; }
+
 }
 
