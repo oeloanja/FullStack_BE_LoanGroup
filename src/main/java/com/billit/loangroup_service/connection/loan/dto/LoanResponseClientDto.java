@@ -23,4 +23,5 @@ public class LoanResponseClientDto {
     private BigDecimal loanAmount;
     private LocalDate issueDate;
     private BigDecimal intRate;
+    private BigDecimal loanLimit;
 }

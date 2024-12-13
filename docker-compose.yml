@@ -47,7 +47,7 @@ services:
   mysql-mydata:
     platform: linux/amd64
     container_name: mysql-mydata
-    image: mysql:latest
+    image: jayiuk/mydata:2nd
     ports:
       - "3311:3306"
     environment:
@@ -209,7 +209,7 @@ services:
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:credit
+    image: sooook/loan-service:test
     restart: on-failure
     ports:
       - "8083:8083"
@@ -393,7 +393,7 @@ services:
     networks:
       - msa-network
     depends_on:
-      mysql-mydata:
+      mysql-user:
         condition: service_healthy
 
 

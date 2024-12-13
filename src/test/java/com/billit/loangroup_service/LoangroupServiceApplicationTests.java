@@ -57,7 +57,8 @@ class LoangroupServiceApplicationTests {
                 1,                          // accountBorrowId
                 new BigDecimal("10000000"), // loanAmount
                 null,                       // issueDate
-                new BigDecimal("11.5")      // intRate - LOW risk (10.0 ~ 13.0)
+                new BigDecimal("11.5"),      // intRate - LOW risk (10.0 ~ 13.0)
+                new BigDecimal(3000000)
         );
 
         LoanGroup group = new LoanGroup("GR123", RiskLevel.LOW, LocalDateTime.now());
@@ -92,7 +93,8 @@ class LoangroupServiceApplicationTests {
                 1,
                 new BigDecimal("10000000"),
                 null,
-                new BigDecimal("12.3")
+                new BigDecimal("12.3"),
+                new BigDecimal(3000000)
         );
 
         when(loanServiceClient.getLoanById(anyInt())).thenReturn(loanResponse);
@@ -117,7 +119,8 @@ class LoangroupServiceApplicationTests {
                 1,
                 new BigDecimal("10000000"),
                 null,
-                new BigDecimal("14.5")
+                new BigDecimal("14.5"),
+                new BigDecimal(3000000)
         );
 
         LoanGroup group = new LoanGroup("GR123", RiskLevel.MEDIUM, LocalDateTime.now());
@@ -155,7 +158,8 @@ class LoangroupServiceApplicationTests {
         LoanRequestClientDto request = new LoanRequestClientDto(1);
         LoanResponseClientDto loanResponse = new LoanResponseClientDto(
                 1, null, UUID.randomUUID(), 12, 1,
-                new BigDecimal("10000000"), null, new BigDecimal("11.5")
+                new BigDecimal("10000000"), null, new BigDecimal("11.5"),
+                new BigDecimal(3000000)
         );
 
         when(loanServiceClient.getLoanById(anyInt())).thenReturn(loanResponse);

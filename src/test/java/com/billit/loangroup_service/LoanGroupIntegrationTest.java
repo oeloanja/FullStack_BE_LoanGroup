@@ -85,7 +85,8 @@ class LoanGroupIntegrationTest {
                 1,
                 new BigDecimal("10000000"),
                 null,
-                new BigDecimal("14.5")
+                new BigDecimal("14.5"),
+                new BigDecimal(3000000)
         );
         when(loanServiceClient.getLoanById(anyInt())).thenReturn(mockLoanResponse);
 
@@ -146,7 +147,7 @@ class LoanGroupIntegrationTest {
 
         // Then
         int finalEmptyGroups = loanGroupRepository
-                .countByRiskLevelAndMemberCountAndIsFullFalse(testRiskLevel.getOrdinal());
+                .countByRiskLevelAndMemberCountAndIsFullFalse(testRiskLevel.getValue());
         assertTrue(finalEmptyGroups >= 3,
                 "Should maintain minimum number of empty groups");
     }

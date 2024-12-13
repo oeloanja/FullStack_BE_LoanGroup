@@ -52,11 +52,10 @@ public class LoanGroupService {
     @Transactional
     public LoanGroupResponseDto assignGroup(LoanRequestClientDto request) {
         try {
-            LoanResponseClientDto loanResponseClient = Optional.ofNullable(loanServiceClient.getLoanById(request.getLoanId()))
+            LoanResponseClientDto requestLoan = Optional.ofNullable(loanServiceClient.getLoanById(request.getLoanId()))
                     .orElseThrow(() -> new CustomException(LOAN_NOT_FOUND, request.getLoanId()));
 
-            BigDecimal intRate = loanResponseClient.getIntRate();
-            RiskLevel riskLevel = RiskLevel.fromInterestRate(intRate);
+            RiskLevel riskLevel = RiskLevel.calculateRiskLevel(requestLoan.getIntRate(), requestLoan.getLoanAmount(), requestLoan.getLoanLimit());
 
             Long groupId = loanGroupRepository.findAvailableGroupId(
                     riskLevel.ordinal(),
