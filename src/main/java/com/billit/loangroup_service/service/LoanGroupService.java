@@ -6,8 +6,8 @@ import com.billit.loangroup_service.connection.loan.dto.LoanResponseClientDto;
 import com.billit.loangroup_service.dto.LoanGroupResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.enums.RiskLevel;
-import com.billit.loangroup_service.enums.RiskLevelResult;
 import com.billit.loangroup_service.exception.CustomException;
+import com.billit.loangroup_service.exception.ErrorCode;
 import com.billit.loangroup_service.kafka.event.LoanGroupFullEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
@@ -24,7 +24,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -54,46 +53,28 @@ public class LoanGroupService {
     public LoanGroupResponseDto assignGroup(LoanRequestClientDto request) {
         try {
             LoanResponseClientDto requestLoan = Optional.ofNullable(loanServiceClient.getLoanById(request.getLoanId()))
-                    .orElseThrow(() -> new CustomException(LOAN_NOT_FOUND, request.getLoanId()));
+                    .orElseThrow(() -> new CustomException(ErrorCode.LOAN_NOT_FOUND, "대출 정보를 찾을 수 없습니다."));
 
-            RiskLevelResult riskResult = RiskLevel.calculateRiskLevel(
-                    requestLoan.getIntRate(),
-                    requestLoan.getLoanAmount(),
-                    requestLoan.getLoanLimit()
-            );
+            RiskLevel riskLevel = RiskLevel.determineRiskLevel(requestLoan.getIntRate());
 
             Long groupId = loanGroupRepository.findAvailableGroupId(
-                    riskResult.riskLevel().ordinal(),
+                    riskLevel.ordinal(),
                     LoanGroup.MAX_MEMBERS
-            ).orElseThrow(() -> new CustomException(LOAN_GROUP_NOT_FOUND, "배정 가능한 그룹이 없습니다. 잠시 후 다시 시도해주세요."));
-
-            loanServiceClient.updateLoanInterestRate(request.getLoanId(), riskResult.adjustedRate());
-
-            int updated = loanGroupRepository.incrementMemberCount(groupId);
-            if (updated != 1) {
-                throw new CustomException(INVALID_PARAMETER, "그룹 인원 조정에 실패했습니다.");
-            }
+            ).orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, "사용 가능한 그룹이 없습니다."));
 
             LoanGroup targetGroup = loanGroupRepository.findById(groupId)
-                    .map(group -> {
-                        entityManager.refresh(group);
-                        return group;
-                    })
-                    .orElseThrow(() -> new CustomException(LOAN_GROUP_NOT_FOUND, groupId));
+                    .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, "그룹을 찾을 수 없습니다."));
 
-            if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
-                targetGroup.updateGroupAsFull();
-                loanGroupRepository.saveAndFlush(targetGroup);
-                kafkaTemplate.send("loan-group-full",
-                        targetGroup.getGroupId().toString(),
-                        new LoanGroupFullEvent(targetGroup.getGroupId()));
-            }
+            targetGroup.incrementMemberCount();
+            loanGroupRepository.save(targetGroup);
+
             return LoanGroupResponseDto.from(targetGroup);
         } catch (Exception e) {
-            log.error("대출 그룹 배정 중 오류 발생: {}", e.getMessage(), e);
-            throw new CustomException(INVALID_PARAMETER, "예기치 못한 오류가 발생했습니다.");
+            log.error("그룹 배정 중 오류 발생: {}", e.getMessage(), e);
+            throw new CustomException(INVALID_PARAMETER, "그룹 배정 처리 중 오류 발생");
         }
     }
+
     @Transactional
     @Async
     public void checkAndReplenishGroupPool(RiskLevel riskLevel) {

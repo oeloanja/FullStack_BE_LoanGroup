@@ -406,14 +406,14 @@ services:
     networks:
       - msa-network
 
-  chatbot-service-non: # Python 챗봇 서버
-    container_name: chatbot-service-non
-    platform: linux/amd64
-    image: jayiuk/nologin:6th
-    ports:
-      - "8070:8070"
-    networks:
-      - msa-network
+#  chatbot-service-non: # Python 챗봇 서버
+#    container_name: chatbot-service-non
+#    platform: linux/amd64
+#    image: jayiuk/nologin:6th
+#    ports:
+#      - "8070:8070"
+#    networks:
+#      - msa-network
 
 volumes:
   mysql-user-data:

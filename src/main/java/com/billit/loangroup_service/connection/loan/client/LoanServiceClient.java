@@ -16,7 +16,4 @@ public interface LoanServiceClient {
 
     @GetMapping("/api/v1/loan-service/list/{groupId}")
     List<LoanResponseClientDto> getLoansByGroupId(@PathVariable Integer groupId);
-
-    @PatchMapping("/api/v1/loan-service/{loanId}/update-rate")
-    void updateLoanInterestRate(@PathVariable Integer loanId, @RequestParam BigDecimal newRate);
 }
