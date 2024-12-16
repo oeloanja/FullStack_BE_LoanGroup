@@ -47,7 +47,7 @@ services:
   mysql-mydata:
     platform: linux/amd64
     container_name: mysql-mydata
-    image: jayiuk/mydata:2nd
+    image: jayiuk/mydata:6th
     ports:
       - "3311:3306"
     environment:
@@ -89,8 +89,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
-    volumes:
-      - mysql-user-data:/var/lib/mysql
+#    volumes:
+#      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -356,14 +356,14 @@ services:
       eureka-service:
         condition: service_started
 
-#  chatbot-service: # Python 챗봇 서버
-#    container_name: chatbot-service
-#    platform: linux/amd64
-#    image: jayiuk/chatbot:15th
-#    ports:
-#      - "8000:8000"
-#    networks:
-#      - msa-network
+  chatbot-service: # Python 챗봇 서버
+    container_name: chatbot-service
+    platform: linux/amd64
+    image: jayiuk/chatbot:15th
+    ports:
+      - "8000:8000"
+    networks:
+      - msa-network
 
   pdf-service:
     container_name: pdf-service
@@ -406,17 +406,16 @@ services:
     networks:
       - msa-network
 
-#  chatbot-service-non: # Python 챗봇 서버
-#    container_name: chatbot-service-non
-#    platform: linux/amd64
-#    image: jayiuk/nologin:6th
-#    ports:
-#      - "8070:8070"
-#    networks:
-#      - msa-network
+  chatbot-service-non: # Python 챗봇 서버
+    container_name: chatbot-service-non
+    platform: linux/amd64
+    image: jayiuk/nologin:6th
+    ports:
+      - "8070:8070"
+    networks:
+      - msa-network
 
 volumes:
-  mysql-user-data:
   mysql-mydata-data:
 
 networks:

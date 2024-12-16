@@ -66,7 +66,21 @@ public class LoanGroupService {
                     .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, "그룹을 찾을 수 없습니다."));
 
             targetGroup.incrementMemberCount();
+
+            boolean shouldPublishEvent = false;
+            if (targetGroup.getMemberCount() >= LoanGroup.MAX_MEMBERS) {
+                targetGroup.updateGroupAsFull();
+                shouldPublishEvent = true;
+            }
+
             loanGroupRepository.save(targetGroup);
+
+            if (shouldPublishEvent) {
+                kafkaTemplate.send("loan-group-full",
+                        targetGroup.getGroupId().toString(),
+                        new LoanGroupFullEvent(targetGroup.getGroupId()));
+                log.info("Group {} is now full, loan-group-full event published", targetGroup.getGroupId());
+            }
 
             return LoanGroupResponseDto.from(targetGroup);
         } catch (Exception e) {
