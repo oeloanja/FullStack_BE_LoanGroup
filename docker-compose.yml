@@ -47,7 +47,7 @@ services:
   mysql-mydata:
     platform: linux/amd64
     container_name: mysql-mydata
-    image: jayiuk/mydata:6th
+    image: jayiuk/mydata:7th
     ports:
       - "3311:3306"
     environment:
@@ -359,11 +359,14 @@ services:
   chatbot-service: # Python 챗봇 서버
     container_name: chatbot-service
     platform: linux/amd64
-    image: jayiuk/chatbot:15th
+    image: jayiuk/chatbot:17th
     ports:
       - "8000:8000"
     networks:
       - msa-network
+    depends_on:
+      mysql-mydata:
+        condition: service_healthy
 
   pdf-service:
     container_name: pdf-service
@@ -400,7 +403,7 @@ services:
   credit-service:
     container_name: credit-service
     platform: linux/amd64
-    image: jijoungee/fastapi-monitoring:3st
+    image: jijoungee/fastapi-monitoring:4st
     ports:
       - "80:80"
     networks:
@@ -409,7 +412,7 @@ services:
   chatbot-service-non: # Python 챗봇 서버
     container_name: chatbot-service-non
     platform: linux/amd64
-    image: jayiuk/nologin:6th
+    image: jayiuk/nologin:7th
     ports:
       - "8070:8070"
     networks:

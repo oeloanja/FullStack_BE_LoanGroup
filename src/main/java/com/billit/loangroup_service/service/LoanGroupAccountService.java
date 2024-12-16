@@ -36,6 +36,8 @@ public class LoanGroupAccountService {
     private final DisbursementService disbursementService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
 
+    private static final BigDecimal BILLIT_CHARGE = new BigDecimal("0.25");
+
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLoanGroupAccount(LoanGroup group) {
         Optional<LoanGroup> optionalGroup = loanGroupRepository.findById(Long.valueOf(group.getGroupId()));
