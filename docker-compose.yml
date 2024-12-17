@@ -359,7 +359,7 @@ services:
   chatbot-service: # Python 챗봇 서버
     container_name: chatbot-service
     platform: linux/amd64
-    image: jayiuk/chatbot:17th
+    image: jayiuk/chatbot:20th
     ports:
       - "8000:8000"
     networks:
@@ -412,7 +412,7 @@ services:
   chatbot-service-non: # Python 챗봇 서버
     container_name: chatbot-service-non
     platform: linux/amd64
-    image: jayiuk/nologin:7th
+    image: jayiuk/nologin:8th
     ports:
       - "8070:8070"
     networks:
