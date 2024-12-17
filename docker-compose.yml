@@ -1,4 +1,17 @@
 services:
+  frontend:
+    container_name: frontend
+    image: dmsdpwh11/nextjs-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://gateway-service:8080
+    networks:
+      - msa-network
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
     container_name: zookeeper
