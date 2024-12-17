@@ -10,7 +10,33 @@ services:
       - msa-network
     depends_on:
       gateway-service:
-        condition: service_healthy
+        condition: service_started
+
+#  certbot:
+#    image: certbot/certbot
+#    container_name: certbot
+#    ports:
+#      - "80:80"  # Certbot이 standalone 모드에서 사용할 포트
+#    volumes:
+#      - ./certbot/conf:/etc/letsencrypt  # 인증서 파일 저장 경로
+#      - ./certbot/www:/var/www/certbot   # Certbot 웹 루트 경로 (갱신용)
+#    entrypoint: >
+#      /bin/sh -c "certbot certonly --standalone -d billit.kro.kr --non-interactive --agree-tos --email inbrain144@gmail.com && echo 'Certbot 완료'"
+#    networks:
+#      - msa-network
+#
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    depends_on:
+      frontend:
+        condition: service_started
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - msa-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -73,8 +99,6 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-    volumes:
-      - mysql-mydata-data:/var/lib/mysql
 
   mysql-loan:
     platform: linux/amd64
@@ -191,6 +215,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
     networks:
       - msa-network
+#    healthcheck:
+#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+#      interval: 30s
+#      timeout: 10s
+#      retries: 3
     depends_on:
       eureka-service:
         condition: service_started
@@ -372,7 +401,7 @@ services:
   chatbot-service: # Python 챗봇 서버
     container_name: chatbot-service
     platform: linux/amd64
-    image: jayiuk/chatbot:19th
+    image: jayiuk/chatbot:24th
     ports:
       - "8000:8000"
     networks:
@@ -412,13 +441,12 @@ services:
       mysql-user:
         condition: service_healthy
 
-
   credit-service:
     container_name: credit-service
     platform: linux/amd64
     image: jijoungee/fastapi-monitoring:4st
     ports:
-      - "80:80"
+      - "8088:80"
     networks:
       - msa-network
 
@@ -431,10 +459,8 @@ services:
     networks:
       - msa-network
 
-volumes:
-  mysql-mydata-data:
-
 networks:
   msa-network:
+    name : msa-network
     driver: bridge
     attachable: true
