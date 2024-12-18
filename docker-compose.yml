@@ -22,19 +22,19 @@ services:
       gateway-service:
         condition: service_started
 
-#  certbot:
-#    image: certbot/certbot
-#    container_name: certbot
-#    ports:
-#      - "80:80"  # Certbot이 standalone 모드에서 사용할 포트
-#    volumes:
-#      - ./certbot/conf:/etc/letsencrypt  # 인증서 파일 저장 경로
-#      - ./certbot/www:/var/www/certbot   # Certbot 웹 루트 경로 (갱신용)
-#    entrypoint: >
-#      /bin/sh -c "certbot certonly --standalone -d billit.kro.kr --non-interactive --agree-tos --email inbrain144@gmail.com && echo 'Certbot 완료'"
-#    networks:
-#      - msa-network
-#
+  #  certbot:
+  #    image: certbot/certbot
+  #    container_name: certbot
+  #    ports:
+  #      - "80:80"  # Certbot이 standalone 모드에서 사용할 포트
+  #    volumes:
+  #      - ./certbot/conf:/etc/letsencrypt  # 인증서 파일 저장 경로
+  #      - ./certbot/www:/var/www/certbot   # Certbot 웹 루트 경로 (갱신용)
+  #    entrypoint: >
+  #      /bin/sh -c "certbot certonly --standalone -d billit.kro.kr --non-interactive --agree-tos --email inbrain144@gmail.com && echo 'Certbot 완료'"
+  #    networks:
+  #      - msa-network
+  #
   nginx:
     container_name: nginx
     image: nginx:latest
@@ -136,8 +136,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
-#    volumes:
-#      - mysql-user-data:/var/lib/mysql
+    #    volumes:
+    #      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -225,11 +225,11 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
     networks:
       - msa-network
-#    healthcheck:
-#      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 3
+    #    healthcheck:
+    #      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+    #      interval: 30s
+    #      timeout: 10s
+    #      retries: 3
     depends_on:
       eureka-service:
         condition: service_started
@@ -252,11 +252,11 @@ services:
       - "8761:8761"
     networks:
       - msa-network
-#    healthcheck:
-#      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
-#      interval: 30s
-#      timeout: 10s
-#      retries: 5
+  #    healthcheck:
+  #      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
+  #      interval: 30s
+  #      timeout: 10s
+  #      retries: 5
 
   loan-service:
     container_name: loan-service
