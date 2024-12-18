@@ -41,7 +41,7 @@ server:
 eureka:
   instance:
     prefer-ip-address: true
-    hostname: ${spring.cloud.client.hostname}
+    hostname: loan-group-service
     non-secure-port: ${server.port}
     ip-address: ${DOCKER_HOST_IP:loan-group-service}
   client:
