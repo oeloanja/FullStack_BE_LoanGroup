@@ -1,11 +1,21 @@
 services:
+  ubuntu:
+    image: ubuntu:22.04
+    container_name: ubuntu
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
   frontend:
     container_name: frontend
     image: dmsdpwh11/nextjs-app:latest
     ports:
       - "3000:3000"
     environment:
-      NEXT_PUBLIC_API_URL: http://gateway-service:8080
+      NEXT_PUBLIC_API_URL: http://billit.kro.kr
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
     networks:
       - msa-network
     depends_on:
@@ -401,7 +411,7 @@ services:
   chatbot-service: # Python 챗봇 서버
     container_name: chatbot-service
     platform: linux/amd64
-    image: jayiuk/chatbot:24th
+    image: jayiuk/chatbot:26th
     ports:
       - "8000:8000"
     networks:
@@ -409,6 +419,7 @@ services:
     depends_on:
       mysql-mydata:
         condition: service_healthy
+    restart: on-failure
 
   pdf-service:
     container_name: pdf-service
