@@ -1,37 +1,40 @@
 package com.billit.loangroup_service.enums;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
+@Getter
+@AllArgsConstructor
 public enum RiskLevel {
-    LOW(0, 10.0, 13.0),
-    MEDIUM(1, 13.01, 16.0),
-    HIGH(2, 16.01, 20.0);
+    LOW(0),
+    MEDIUM(1),
+    HIGH(2);
 
-    @Getter
-    private final int ordinal;
-    private final double minRate;
-    private final double maxRate;
+    private final int value;
 
-    RiskLevel(int ordinal, double minRate, double maxRate) {
-        this.ordinal = ordinal;
-        this.minRate = minRate;
-        this.maxRate = maxRate;
-    }
+    private static final BigDecimal MEDIUM_RISK_MIN_RATE = new BigDecimal("13.0");
+    private static final BigDecimal MEDIUM_RISK_MAX_RATE = new BigDecimal("17.0");
 
-    public static RiskLevel fromOrdinal(int ordinal) {
-        for (RiskLevel level : values()) {
-            if (level.ordinal == ordinal) return level;
+    public static RiskLevel determineRiskLevel(BigDecimal adjustedRate) {
+        if (adjustedRate.compareTo(MEDIUM_RISK_MIN_RATE) >= 0 &&
+                adjustedRate.compareTo(MEDIUM_RISK_MAX_RATE) <= 0) {
+            return MEDIUM;
+        } else if (adjustedRate.compareTo(MEDIUM_RISK_MIN_RATE) < 0) {
+            return LOW;
+        } else {
+            return HIGH;
         }
-        throw new IllegalArgumentException("Invalid ordinal: " + ordinal);
     }
 
-    public static RiskLevel fromInterestRate(BigDecimal interestRate) {
-        double rate = interestRate.doubleValue();
-        if (rate >= LOW.minRate && rate <= LOW.maxRate) return LOW;
-        if (rate >= MEDIUM.minRate && rate <= MEDIUM.maxRate) return MEDIUM;
-        if (rate >= HIGH.minRate && rate <= HIGH.maxRate) return HIGH;
-        throw new IllegalArgumentException("Interest rate out of valid range: " + rate);
+    public static RiskLevel fromOrdinal(int value) {
+        for (RiskLevel level : values()) {
+            if (level.value == value) {
+                return level;
+            }
+        }
+        throw new IllegalArgumentException("Invalid risk level value: " + value);
     }
 }

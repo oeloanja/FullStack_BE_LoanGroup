@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
@@ -16,10 +17,11 @@ import java.time.LocalDate;
 public class LoanResponseClientDto {
     private Integer loanId;
     private Integer groupId;
-    private Integer userBorrowId;
+    private UUID userBorrowId;
     private Integer term;
     private Integer accountBorrowId;
     private BigDecimal loanAmount;
     private LocalDate issueDate;
     private BigDecimal intRate;
+    private BigDecimal loanLimit;
 }

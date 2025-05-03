@@ -1,4 +1,52 @@
 services:
+  ubuntu:
+    image: ubuntu:22.04
+    container_name: ubuntu
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  frontend:
+    container_name: frontend
+    image: dmsdpwh11/nextjs-app:latest
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://billit.kro.kr
+      AWS_S3_BUCKET_NAME: ${AWS_S3_BUCKET_NAME}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION}
+    networks:
+      - msa-network
+    depends_on:
+      gateway-service:
+        condition: service_started
+
+  #  certbot:
+  #    image: certbot/certbot
+  #    container_name: certbot
+  #    ports:
+  #      - "80:80"  # Certbot이 standalone 모드에서 사용할 포트
+  #    volumes:
+  #      - ./certbot/conf:/etc/letsencrypt  # 인증서 파일 저장 경로
+  #      - ./certbot/www:/var/www/certbot   # Certbot 웹 루트 경로 (갱신용)
+  #    entrypoint: >
+  #      /bin/sh -c "certbot certonly --standalone -d billit.kro.kr --non-interactive --agree-tos --email inbrain144@gmail.com && echo 'Certbot 완료'"
+  #    networks:
+  #      - msa-network
+  #
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    depends_on:
+      frontend:
+        condition: service_started
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - msa-network
 
   zookeeper:
     image: confluentinc/cp-zookeeper:latest
@@ -27,6 +75,41 @@ services:
     networks:
       - msa-network
 
+  mysqlchatbot:
+    platform: linux/amd64
+    container_name: mysqlchatbot
+    image: mysql:latest
+    ports:
+      - "3310:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=chat_history
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+
+  mysql-mydata:
+    platform: linux/amd64
+    container_name: mysql-mydata
+    image: jayiuk/mydata:7th
+    ports:
+      - "3311:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=1234
+      - MYSQL_DATABASE=mydata
+    networks:
+      - msa-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
   mysql-loan:
     platform: linux/amd64
     container_name: mysql-loan
@@ -53,8 +136,8 @@ services:
     environment:
       - MYSQL_ROOT_PASSWORD=1234
       - MYSQL_DATABASE=user_service
-    volumes:
-      - mysql-user-data:/var/lib/mysql
+    #    volumes:
+    #      - mysql-user-data:/var/lib/mysql
     networks:
       - msa-network
     healthcheck:
@@ -142,9 +225,24 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
     networks:
       - msa-network
+    #    healthcheck:
+    #      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+    #      interval: 30s
+    #      timeout: 10s
+    #      retries: 3
     depends_on:
       eureka-service:
-        condition: service_healthy
+        condition: service_started
+      loan-service:
+        condition: service_started
+      loan-group-service:
+        condition: service_started
+      user-service:
+        condition: service_started
+      invest-service:
+        condition: service_started
+      repayment-service:
+        condition: service_started
 
   eureka-service:
     platform: linux/amd64
@@ -154,16 +252,16 @@ services:
       - "8761:8761"
     networks:
       - msa-network
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
+  #    healthcheck:
+  #      test: ["CMD", "wget", "--spider", "http://localhost:8761/actuator/health"]
+  #      interval: 30s
+  #      timeout: 10s
+  #      retries: 5
 
   loan-service:
     container_name: loan-service
     platform: linux/amd64
-    image: sooook/loan-service:latest
+    image: sooook/loan-service:test
     restart: on-failure
     ports:
       - "8083:8083"
@@ -184,12 +282,12 @@ services:
       mysql-loan:
         condition: service_healthy
       eureka-service:
-        condition: service_healthy
+        condition: service_started
 
   user-service:
     container_name: user-service
     platform: linux/amd64
-    image: sooook/user-service:latest
+    image: sooook/user-service:test
     restart: on-failure
     ports:
       - "8085:8085"
@@ -210,14 +308,14 @@ services:
       mysql-user:
         condition: service_healthy
       eureka-service:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_started
 
   loan-group-service:
     container_name: loan-group-service
     platform: linux/amd64
-    image: sooook/loan-group-service:latest
+    image: sooook/loan-group-service:test
     restart: on-failure
     ports:
       - "8084:8084"
@@ -238,13 +336,14 @@ services:
       mysql-loan-group:
         condition: service_healthy
       eureka-service:
-        condition: service_healthy
+        condition: service_started
       redis:
         condition: service_started
+
   invest-service:
     container_name: invest-service
     platform: linux/amd64
-    image: sooook/invest-service:latest
+    image: sooook/invest-service:test
     restart: on-failure
     ports:
       - "8081:8081"
@@ -265,12 +364,12 @@ services:
       postgres-invest:
         condition: service_healthy
       eureka-service:
-        condition: service_healthy
+        condition: service_started
 
   repayment-service:
     container_name: repayment-service
     platform: linux/amd64
-    image: sooook/repayment-service:latest
+    image: sooook/repayment-service:test
     restart: on-failure
     ports:
       - "8082:8082"
@@ -291,12 +390,88 @@ services:
       postgres-repayment:
         condition: service_healthy
       eureka-service:
+        condition: service_started
+
+  chatbot-proxy:
+    container_name: chatbot-proxy
+    platform: linux/amd64
+    image: sooook/chatbot-proxy-service:latest
+    restart: on-failure
+    ports:
+      - "8086:8086"
+    environment:
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-service:8761/eureka/
+      - CHATBOT_SERVER_URL=http://chatbot-service:8000
+    networks:
+      - msa-network
+    depends_on:
+      eureka-service:
+        condition: service_started
+
+  chatbot-service: # Python 챗봇 서버
+    container_name: chatbot-service
+    platform: linux/amd64
+    image: jayiuk/chatbot:26th
+    ports:
+      - "8000:8000"
+    networks:
+      - msa-network
+    depends_on:
+      mysql-mydata:
+        condition: service_healthy
+    restart: on-failure
+
+  pdf-service:
+    container_name: pdf-service
+    platform: linux/amd64
+    image: jayiuk/screeninginput:12th
+    ports:
+      - "4000:4000"
+    networks:
+      - msa-network
+    env_file:
+      - .env
+
+  credit-proxy:
+    container_name: credit-service-proxy
+    platform: linux/amd64
+    image: sooook/credit-proxy-service:latest
+    environment:
+      - SERVICES_PDF_EXTRACTOR_URL=http://pdf-service:4000
+      - SERVICES_CREDIT_MODEL_URL=http://credit-service:80 # 포트번호 바꿔야할수 있음
+      - SPRING_PROFILES_ACTIVE=docker
+      - USER_SERVICE_URL=http://user-service:8085
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-mydata:3306/mydata?createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=1234
+    ports:
+      - "8090:8090"
+    networks:
+      - msa-network
+    depends_on:
+      mysql-user:
         condition: service_healthy
 
-volumes:
-  mysql-user-data:
+  credit-service:
+    container_name: credit-service
+    platform: linux/amd64
+    image: jijoungee/fastapi-monitoring:4st
+    ports:
+      - "8088:80"
+    networks:
+      - msa-network
+
+  chatbot-service-non: # Python 챗봇 서버
+    container_name: chatbot-service-non
+    platform: linux/amd64
+    image: jayiuk/nologin:8th
+    ports:
+      - "8070:8070"
+    networks:
+      - msa-network
 
 networks:
   msa-network:
+    name : msa-network
     driver: bridge
     attachable: true

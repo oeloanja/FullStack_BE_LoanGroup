@@ -2,7 +2,6 @@ package com.billit.loangroup_service.controller;
 
 import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
-import com.billit.loangroup_service.exception.LoanGroupException;
 import com.billit.loangroup_service.service.LoanGroupAccountService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -22,24 +21,13 @@ public class LoanGroupAccountController {
     @PutMapping("/invest")
     public ResponseEntity<String> updatePlatformAccountBalance(
             @Valid @RequestBody LoanGroupAccountRequestDto request) {
-        try {
-            log.info("Received request: {}", request);  // 요청 로그 추가
-            loanGroupAccountService.updateLoanGroupAccountBalance(request);
-            return ResponseEntity.ok("투자금이 성공적으로 입금되었습니다.");
-        } catch (LoanGroupException e) {
-            log.error("Failed to process investment: {}", e.getMessage());  // 에러 로그 추가
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            log.error("Unexpected error: ", e);  // 예상치 못한 에러 로그 추가
-            return ResponseEntity.badRequest().body("처리 중 오류가 발생했습니다.");
-        }
+        loanGroupAccountService.updateLoanGroupAccountBalance(request);
+        return ResponseEntity.ok("투자금이 성공적으로 입금되었습니다.");
     }
 
     // group에 account가 있는지 조회
     @GetMapping("{groupId}")
-    public LoanGroupAccountResponseDto getLoanGroupAccount(
-            @PathVariable Integer groupId
-    ){
+    public LoanGroupAccountResponseDto getLoanGroupAccount(@PathVariable Integer groupId) {
         return loanGroupAccountService.getAccount(groupId);
     }
 

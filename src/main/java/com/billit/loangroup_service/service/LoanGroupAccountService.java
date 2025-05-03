@@ -6,22 +6,18 @@ import com.billit.loangroup_service.dto.LoanGroupAccountRequestDto;
 import com.billit.loangroup_service.dto.LoanGroupAccountResponseDto;
 import com.billit.loangroup_service.entity.LoanGroup;
 import com.billit.loangroup_service.entity.LoanGroupAccount;
-import com.billit.loangroup_service.event.domain.LoanGroupInvestmentCompleteEvent;
-import com.billit.loangroup_service.exception.LoanGroupException;
-import com.billit.loangroup_service.exception.LoanGroupNotFoundException;
-import com.billit.loangroup_service.exception.LoanNotFoundException;
+import com.billit.loangroup_service.exception.CustomException;
+import com.billit.loangroup_service.exception.ErrorCode;
+import com.billit.loangroup_service.kafka.event.LoanGroupInvestmentCompleteEvent;
 import com.billit.loangroup_service.repository.LoanGroupRepository;
 import com.billit.loangroup_service.repository.LoanGroupAccountRepository;
 import com.billit.loangroup_service.utils.ValidationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -37,19 +33,19 @@ public class LoanGroupAccountService {
     private final LoanGroupAccountRepository loanGroupAccountRepository;
     private final LoanServiceClient loanServiceClient;
     private final LoanGroupRepository loanGroupRepository;
-    private final ApplicationEventPublisher eventPublisher;
     private final DisbursementService disbursementService;
     private final KafkaTemplate<String, Object> kafkaTemplate;
+
+    private static final BigDecimal BILLIT_CHARGE = new BigDecimal("0.25");
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createLoanGroupAccount(LoanGroup group) {
         Optional<LoanGroup> optionalGroup = loanGroupRepository.findById(Long.valueOf(group.getGroupId()));
-        LoanGroup managedGroup = optionalGroup.orElseThrow(() -> new LoanGroupNotFoundException(group.getGroupId()));
+        ValidationUtils.validateLoanGroupExistence(optionalGroup, group.getGroupId());
+        LoanGroup managedGroup = optionalGroup.get();
 
         List<LoanResponseClientDto> groupLoans = loanServiceClient.getLoansByGroupId(group.getGroupId());
-        if (groupLoans.isEmpty()) {
-            return;
-        }
+        ValidationUtils.validateLoanExistence(groupLoans);
 
         BigDecimal totalLoanAmount = groupLoans.stream()
                 .map(LoanResponseClientDto::getLoanAmount)
@@ -73,7 +69,7 @@ public class LoanGroupAccountService {
     @Transactional
     public void updateLoanGroupAccountBalance(LoanGroupAccountRequestDto investRequest) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(investRequest.getGroupId())
-                .orElseThrow(() -> new LoanGroupNotFoundException(investRequest.getGroupId()));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, investRequest.getGroupId()));
 
         ValidationUtils.validateAccountNotClosed(target);
 
@@ -84,8 +80,8 @@ public class LoanGroupAccountService {
             target.closeAccount();
             loanGroupAccountRepository.saveAndFlush(target);
 
-            // Spring Event 대신 Kafka 사용
             kafkaTemplate.send("investment-complete",
+                    target.getGroup().getGroupId().toString(),
                     new LoanGroupInvestmentCompleteEvent(
                             target.getGroup().getGroupId(),
                             target.getRequiredAmount(),
@@ -108,16 +104,13 @@ public class LoanGroupAccountService {
 
     public LoanGroupAccountResponseDto getAccount(Integer groupId) {
         LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(groupId)
-                .orElseThrow(() -> new LoanGroupNotFoundException(groupId));
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, groupId));
         return LoanGroupAccountResponseDto.from(target);
     }
 
-//    @Transactional(propagation = Propagation.REQUIRES_NEW)
-//    public void publishInvestmentCompleteEvent(LoanGroupAccount account, BigDecimal newBalance) {
-//        eventPublisher.publishEvent(new LoanGroupInvestmentCompleteEvent(
-//                account.getGroup().getGroupId(),
-//                account.getRequiredAmount(),
-//                newBalance
-//        ));
-//    }
+    public void updateAccountStatusOpened(Integer groupId){
+        LoanGroupAccount target = loanGroupAccountRepository.findByGroup_GroupId(groupId)
+                .orElseThrow(() -> new CustomException(ErrorCode.LOAN_GROUP_NOT_FOUND, groupId));
+        target.reopenAccount();
+    }
 }
